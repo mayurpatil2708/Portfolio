@@ -20,7 +20,7 @@ export default function Home() {
           <div className="intro">
             <h2>Hey there!</h2>
             <p>
-              I'm Mayur — a Traffic Systems Design Engineer at WSP, focused on
+              I&apos;m Mayur — a Traffic Systems Design Engineer at WSP, focused on
               signal design, intelligent transportation systems (ITS), and
               street lighting circuit engineering. I like taking a corridor
               from a concept plan to a fully detailed, field-ready design —
@@ -32,8 +32,8 @@ export default function Home() {
               circuit and voltage drop analysis, and coordinating with
               utilities, jurisdictions, and construction teams to make sure
               designs hold up once they leave the drawing board. I also build
-              my own tools when the ones available don't quite fit the job —
-              that's how Circuit Line came to be.
+              my own tools when the ones available don&apos;t quite fit the job —
+              that&apos;s how Circuit Line came to be.
             </p>
           </div>
           <Portrait className="mobile-image" />
@@ -53,7 +53,7 @@ export default function Home() {
               other people skip over, which is usually where side projects
               like Circuit Line come from. Always happy to talk shop about
               signal design, ITS, or anything electrical on the traffic side —
-              let's connect!
+              let&apos;s connect!
             </p>
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function Home() {
           <div className="intro">
             <h2>Hey there!</h2>
             <p>
-              I'm Mayur — a Traffic Systems Design Engineer at WSP, focused on
+              I&apos;m Mayur — a Traffic Systems Design Engineer at WSP, focused on
               signal design, intelligent transportation systems (ITS), and
               street lighting circuit engineering. I like taking a corridor
               from a concept plan to a fully detailed, field-ready design —
@@ -75,8 +75,8 @@ export default function Home() {
               circuit and voltage drop analysis, and coordinating with
               utilities, jurisdictions, and construction teams to make sure
               designs hold up once they leave the drawing board. I also build
-              my own tools when the ones available don't quite fit the job —
-              that's how Circuit Line came to be.
+              my own tools when the ones available don&apos;t quite fit the job —
+              that&apos;s how Circuit Line came to be.
             </p>
             <p>
               I care about designs that actually work in the field, not just
@@ -89,7 +89,7 @@ export default function Home() {
               other people skip over, which is usually where side projects
               like Circuit Line come from. Always happy to talk shop about
               signal design, ITS, or anything electrical on the traffic
-              side — let's connect!
+              side — let&apos;s connect!
             </p>
           </div>
           <Portrait />
