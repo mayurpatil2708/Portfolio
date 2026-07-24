@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("portfolio navigation", () => {
-  test("visits the main pages from the desktop navigation", async ({ page }) => {
+  test("visits the main pages from the desktop navigation", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "chromium", "Desktop navigation is hidden on mobile.");
     await page.goto("/");
 
     await expect(page).toHaveTitle(/Mayur Patil/);
@@ -36,7 +37,8 @@ test.describe("portfolio navigation", () => {
 });
 
 test.describe("mobile navigation and contact", () => {
-  test("opens and closes the mobile navigation", async ({ page }) => {
+  test("opens and closes the mobile navigation", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile-chrome", "Mobile navigation is hidden on desktop.");
     await page.goto("/");
 
     const menuButton = page.getByRole("button", { name: "Toggle menu" });
