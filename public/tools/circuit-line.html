@@ -1,0 +1,2835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circuit Line — Street Lighting Voltage Drop Tool — by Mayur Patil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
+<style>
+:root{
+  --paper:#F5F3EC; --paper-dim:#EAE7DC;
+  --blueprint:#132A42; --blueprint-deep:#0E2033;
+  --grid-line:rgba(148,190,214,0.16);
+  --copper:#C1793A; --copper-bright:#E0964F;
+  --amber:#E8A33D; --red:#D1483B; --green:#4F9B72;
+  --ink:#1B2430; --ink-soft:#5B6675;
+  --line-white:#EAF3F8; --panel-border:#D8D3C4;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+body{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+header{background:var(--blueprint-deep);color:var(--line-white);padding:12px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-bottom:3px solid var(--copper);z-index:5;}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;}
+.brand h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:19px;letter-spacing:0.5px;margin:0;text-transform:uppercase;}
+.brand .tag{font-size:10.5px;color:var(--copper-bright);font-family:'IBM Plex Mono',monospace;letter-spacing:0.5px;}
+.hdr-field{display:flex;flex-direction:column;gap:3px;}
+.hdr-field label{font-size:9.5px;text-transform:uppercase;letter-spacing:0.7px;color:#8FB4CC;font-weight:600;}
+.hdr-field select,.hdr-field input{background:var(--blueprint);color:var(--line-white);border:1px solid #2C4A66;border-radius:4px;padding:6px 7px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;min-width:64px;}
+.hdr-btn{background:transparent;border:1.5px solid #2C4A66;color:var(--line-white);padding:7px 11px;border-radius:5px;font-family:'Inter',sans-serif;font-weight:600;font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.hdr-btn:hover{border-color:var(--copper-bright);color:var(--copper-bright);}
+.hdr-btn.primary{background:var(--copper);border-color:var(--copper);color:#1B2430;}
+.hdr-btn.primary:hover{background:var(--copper-bright);color:#1B2430;}
+.hdr-divider{width:1px;align-self:stretch;background:#2C4A66;margin:0 2px;}
+.app{display:flex;flex:1;min-height:0;}
+.toolbar{width:148px;background:var(--paper-dim);border-right:1px solid var(--panel-border);padding:14px 9px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;}
+.toolbar .group-label{font-size:9.5px;text-transform:uppercase;letter-spacing:0.7px;color:var(--ink-soft);font-weight:700;margin:9px 4px 2px;}
+.tool-btn{display:flex;align-items:center;gap:7px;background:var(--paper);border:1.5px solid var(--panel-border);border-radius:6px;padding:8px 9px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;text-align:left;transition:all .12s;}
+.tool-btn:hover{border-color:var(--copper);}
+.tool-btn.active{background:var(--blueprint);color:var(--line-white);border-color:var(--blueprint);}
+.tool-hint{font-size:10.5px;color:var(--ink-soft);padding:4px;line-height:1.4;}
+.legend-mini{display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--ink-soft);}
+.legend-mini .row{display:flex;align-items:center;gap:8px;}
+.legend-mini .dot{width:10px;height:10px;border-radius:50%;flex:none;}
+.canvas-outer{flex:1;position:relative;min-height:0;}
+.canvas-wrap{position:absolute;inset:0;background:var(--blueprint);overflow:auto;}
+.canvas-wrap svg{display:block;cursor:crosshair;}
+.grid-pattern-line{stroke:var(--grid-line);stroke-width:1;}
+.mode-banner{position:absolute;top:10px;left:10px;background:var(--copper);color:#1B2430;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;padding:6px 12px;border-radius:4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.3);}
+.bg-controls{position:absolute;bottom:10px;left:10px;background:rgba(14,32,51,0.9);border:1px solid #2C4A66;border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--line-white);}
+.bg-controls input[type=file]{font-size:10px;color:var(--line-white);max-width:105px;}
+.bg-controls input[type=range]{width:65px;}
+.side-panel{width:350px;background:var(--paper);border-left:1px solid var(--panel-border);display:flex;flex-direction:column;overflow-y:auto;}
+.panel-section{border-bottom:1px solid var(--panel-border);padding:14px 17px;}
+.panel-section h2{font-family:'Oswald',sans-serif;font-size:12.5px;text-transform:uppercase;letter-spacing:0.7px;margin:0 0 10px 0;color:var(--blueprint);display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.panel-section h2::before{content:'';width:10px;height:10px;background:var(--copper);display:inline-block;border-radius:2px;margin-right:8px;}
+.panel-section h2 .htitle{display:flex;align-items:center;flex:1;}
+.field-row{margin-bottom:9px;}
+.field-row label{display:block;font-size:10.5px;font-weight:600;color:var(--ink-soft);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.3px;}
+.field-row input[type=text],.field-row input[type=number],.field-row select{width:100%;padding:6px 8px;border:1px solid var(--panel-border);border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:#fff;}
+.field-row-inline{display:flex;gap:8px;}
+.field-row-inline .field-row{flex:1;}
+.empty-hint{color:var(--ink-soft);font-size:12px;line-height:1.5;}
+.danger-btn{background:transparent;border:1.5px solid var(--red);color:var(--red);padding:7px 12px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;width:100%;margin-top:6px;}
+.danger-btn:hover{background:var(--red);color:#fff;}
+.link-btn{background:none;border:none;color:var(--copper);font-size:11px;font-weight:600;cursor:pointer;padding:0;text-decoration:underline;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px;}
+.summary-card{background:var(--blueprint);color:var(--line-white);border-radius:6px;padding:9px;}
+.summary-card .val{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:var(--copper-bright);}
+.summary-card .lbl{font-size:9.5px;text-transform:uppercase;letter-spacing:0.4px;color:#8FB4CC;margin-top:2px;}
+.status-pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;}
+.status-pill.pass{background:rgba(79,155,114,0.15);color:var(--green);}
+.status-pill.fail{background:rgba(209,72,59,0.15);color:var(--red);}
+.lc-block{border:1px solid var(--panel-border);border-radius:6px;padding:9px 10px;margin-bottom:8px;background:#fff;}
+.lc-block .lc-title{font-weight:700;font-size:12px;margin-bottom:4px;display:flex;justify-content:space-between;}
+.lc-block .lc-row{font-size:11px;color:var(--ink-soft);display:flex;justify-content:space-between;margin-bottom:2px;font-family:'IBM Plex Mono',monospace;}
+table.segments{width:100%;border-collapse:collapse;font-size:11px;font-family:'IBM Plex Mono',monospace;}
+table.segments th{text-align:left;font-family:'Inter',sans-serif;font-size:9px;text-transform:uppercase;color:var(--ink-soft);padding:4px 4px;border-bottom:1.5px solid var(--panel-border);}
+table.segments td{padding:5px 4px;border-bottom:1px solid var(--paper-dim);}
+table.segments tr:hover td{background:var(--paper-dim);}
+.flag-bad{color:var(--red);font-weight:700;}
+.flag-ok{color:var(--green);}
+.warn-row{font-size:11px;padding:6px 0;border-bottom:1px solid var(--paper-dim);}
+.warn-row .sev{font-weight:700;text-transform:uppercase;font-size:9.5px;letter-spacing:0.3px;}
+.warn-row .sev.error{color:var(--red);}
+.warn-row .sev.warning{color:var(--amber);}
+.test-row{font-size:11.5px;padding:5px 0;border-bottom:1px solid var(--paper-dim);display:flex;justify-content:space-between;gap:8px;}
+.test-row .tstatus{font-weight:700;font-size:10px;text-transform:uppercase;flex:none;}
+.test-summary{font-weight:700;font-size:12.5px;margin-bottom:8px;padding:8px;border-radius:5px;}
+.test-summary.all-pass{background:rgba(79,155,114,0.12);color:var(--green);}
+.test-summary.has-fail{background:rgba(209,72,59,0.12);color:var(--red);}
+.wire-table{width:100%;border-collapse:collapse;font-size:11px;font-family:'IBM Plex Mono',monospace;}
+.wire-table th{font-family:'Inter',sans-serif;font-size:9px;text-transform:uppercase;color:var(--ink-soft);text-align:left;padding:3px;}
+.wire-table td{padding:3px;}
+.wire-table input{width:60px;padding:3px 5px;font-family:'IBM Plex Mono',monospace;font-size:11px;border:1px solid var(--panel-border);border-radius:3px;}
+details.adv{margin-top:6px;}
+details.adv summary{cursor:pointer;font-size:11px;font-weight:600;color:var(--copper);}
+/* modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(14,32,51,0.75);display:flex;align-items:center;justify-content:center;z-index:50;}
+.modal-box{background:var(--paper);border-radius:8px;padding:22px 24px;width:520px;max-height:85vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.4);}
+.modal-box h3{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:15px;color:var(--blueprint);margin:0 0 14px;}
+.modal-box .field-row select, .modal-box .field-row input{width:100%;}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+.btn-secondary{background:transparent;border:1.5px solid var(--panel-border);padding:8px 14px;border-radius:5px;font-weight:600;font-size:12.5px;cursor:pointer;}
+.btn-primary{background:var(--copper);border:1.5px solid var(--copper);color:#1B2430;padding:8px 14px;border-radius:5px;font-weight:700;font-size:12.5px;cursor:pointer;}
+.checkbox-row{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:10px;}
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-thumb{background:#c8c2b0;border-radius:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><h1>Circuit Line</h1><span class="tag">STREET LIGHTING VOLTAGE DROP</span><span class="tag" style="color:#6FA8C7;margin-left:10px;">by Mayur Patil</span></div>
+  <div class="hdr-field"><label>Source Voltage</label>
+    <select id="sysVoltage"><option value="120">120 V</option><option value="208">208 V</option><option value="240" selected>240 V</option><option value="277">277 V</option><option value="480">480 V</option></select>
+  </div>
+  <div class="hdr-field"><label>Phase</label>
+    <select id="sysPhase"><option value="1" selected>Single (1φ)</option><option value="3">Three (3φ)</option></select>
+  </div>
+  <div class="hdr-field"><label>Max %VD Allowed</label><input type="number" id="vdThreshold" value="5" min="1" max="15" step="0.5" style="width:56px;"></div>
+  <div class="hdr-field"><label>Ft per Pixel</label><input type="number" id="scaleFtPerPx" value="0.5" min="0.01" step="0.01" style="width:60px;"></div>
+  <div class="hdr-divider"></div>
+  <button class="hdr-btn" id="btnClear">Clear All</button>
+  <button class="hdr-btn" id="btnSaveJson">Save Layout</button>
+  <button class="hdr-btn" id="btnLoadJson">Load Layout</button>
+  <input type="file" id="loadJsonInput" accept=".json" style="display:none;">
+  <div class="hdr-divider"></div>
+  <button class="hdr-btn" id="btnDownloadTemplate">Download Sample Template</button>
+  <button class="hdr-btn" id="btnImportExcel">Import Excel Design</button>
+  <input type="file" id="importExcelInput" accept=".xlsx,.xls" style="display:none;">
+  <button class="hdr-btn" id="btnExportResults">Export Excel Results</button>
+  <button class="hdr-btn" id="btnExportCircuitAnalysis">Export Circuit Analysis Report</button>
+  <button class="hdr-btn primary" id="btnExportDesignResults">Export Design + Results</button>
+  <div class="hdr-divider"></div>
+  <button class="hdr-btn" id="btnImportAgi32">Import AGi32 Luminaire Schedule</button>
+  <input type="file" id="importAgi32Input" accept=".csv,.txt" style="display:none;">
+  <button class="hdr-btn" id="btnImportAgi32Pdf">Import AGi32 PDF Report</button>
+  <input type="file" id="importAgi32PdfInput" accept=".pdf" style="display:none;">
+  <button class="hdr-btn" id="btnImportAgi32Dxf">Import AGi32 DXF Layout</button>
+  <input type="file" id="importAgi32DxfInput" accept=".dxf" style="display:none;">
+</header>
+
+<div class="app">
+  <div class="toolbar">
+    <div class="group-label">Place</div>
+    <button class="tool-btn" data-mode="add-source"><span>🏭</span> Load Center</button>
+    <button class="tool-btn" data-mode="add-pole"><span>💡</span> Light Pole</button>
+    <button class="tool-btn" data-mode="add-jbox"><span>▢</span> Junction Box</button>
+    <div class="tool-hint">You can place more than one Load Center — each is its own independent circuit source (e.g. Load Center A, B, C…).</div>
+
+    <div class="group-label">Connect</div>
+    <button class="tool-btn" data-mode="connect"><span>⚡</span> Draw Conduit</button>
+    <div class="tool-hint">Click a start point, then an end point. Branch from one point to several boxes to create a splice.</div>
+    <button class="tool-btn" id="btnAutoConnect"><span>🔗</span> Auto-Connect Chain</button>
+    <div class="tool-hint">Wires every currently-unconnected pole/box into one nearest-neighbor chain off a Load Center — a fast starting point for a long straight run (e.g. a corridor import) that you can still edit or re-splice afterward.</div>
+
+    <div class="group-label">Edit</div>
+    <button class="tool-btn" data-mode="select"><span>↖</span> Select / Move</button>
+    <button class="tool-btn" data-mode="delete"><span>✕</span> Delete</button>
+    <div class="tool-hint">Deleting a pole or box removes everything downstream of it.</div>
+    <div class="tool-hint">Shortcuts: <strong>Delete</strong> removes what's selected, <strong>Esc</strong> cancels the current tool.</div>
+
+    <div class="group-label">Legend</div>
+    <div class="legend-mini">
+      <div class="row"><div class="dot" style="background:#4F9B72;"></div> Under 50% of VD limit</div>
+      <div class="row"><div class="dot" style="background:#E8A33D;"></div> Approaching VD limit</div>
+      <div class="row"><div class="dot" style="background:#D1483B;"></div> Exceeds VD limit / ampacity</div>
+    </div>
+    <div class="tool-hint">Colors reflect <strong>cumulative</strong> drop from the Load Center to that point, not just one segment.</div>
+    <div class="tool-hint">Scroll to zoom, middle-click drag to pan.</div>
+  </div>
+
+  <div class="canvas-outer" id="canvasOuter">
+    <div class="canvas-wrap" id="canvasWrap">
+      <svg id="svg" width="2200" height="1500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" class="grid-pattern-line"/></pattern>
+        </defs>
+        <rect x="0" y="0" width="2200" height="1500" fill="url(#gridPattern)"/>
+        <g id="edgesLayer"></g>
+        <g id="nodesLayer"></g>
+      </svg>
+    </div>
+    <div class="mode-banner" id="modeBanner" style="display:none;"></div>
+    <div class="bg-controls">
+      <span>Aerial / Background:</span>
+      <input type="file" id="bgUpload" accept="image/*">
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;"><input type="checkbox" id="bgToggle" checked> On</label>
+      <input type="range" id="bgOpacity" min="0" max="1" step="0.05" value="0.4" title="Background opacity">
+      <button class="hdr-btn" id="btnClearBg" style="padding:4px 8px;font-size:11px;">Remove</button>
+    </div>
+    <div class="bg-controls" style="left:auto;right:10px;bottom:10px;">
+      <button class="hdr-btn" id="btnZoomOut" style="padding:4px 10px;font-size:14px;">−</button>
+      <span id="zoomLabel" style="font-family:'IBM Plex Mono',monospace;min-width:42px;text-align:center;">100%</span>
+      <button class="hdr-btn" id="btnZoomIn" style="padding:4px 10px;font-size:14px;">+</button>
+      <button class="hdr-btn" id="btnZoomReset" style="padding:4px 8px;font-size:11px;">Reset</button>
+      <button class="hdr-btn" id="btnZoomFit" style="padding:4px 8px;font-size:11px;" title="Zoom and scroll so every point is visible">Fit All</button>
+    </div>
+  </div>
+
+  <div class="side-panel">
+    <div class="panel-section" id="inspector">
+      <h2><span class="htitle">Inspector</span></h2>
+      <div class="empty-hint">Select a pole, box, load center, or conduit run to edit its details.</div>
+    </div>
+    <div class="panel-section">
+      <h2><span class="htitle">Bulk Edit Luminaires</span></h2>
+      <div class="field-row-inline">
+        <div class="field-row"><label>New Wattage (W)</label><input type="number" id="bulkWatts" min="0" placeholder="e.g. 150"></div>
+        <div class="field-row"><label>Circuit filter (blank = all)</label><input type="text" id="bulkCircuit" placeholder="optional"></div>
+      </div>
+      <button class="hdr-btn primary" id="btnBulkApply" style="width:100%;">Apply to Matching Poles</button>
+      <div class="tool-hint" id="bulkResult"></div>
+    </div>
+    <div class="panel-section">
+      <h2><span class="htitle">Circuit Summary</span></h2>
+      <div id="lcSummaryBlocks"></div>
+      <div class="summary-grid" id="summaryGrid"></div>
+      <div id="statusLine"></div>
+    </div>
+    <div class="panel-section" id="warningsSection" style="display:none;">
+      <details class="adv" id="warningsDetails" open>
+        <summary style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:12.5px;letter-spacing:.7px;color:var(--blueprint);cursor:pointer;">Validation Warnings <span id="warningsCount"></span></summary>
+        <table class="segments" id="warningsTable" style="margin-top:8px;">
+          <thead><tr><th>Sev</th><th>Object</th><th>Issue</th><th>Fix</th></tr></thead>
+          <tbody id="warningsList"></tbody>
+        </table>
+      </details>
+    </div>
+    <div class="panel-section">
+      <h2><span class="htitle">Wire Resistance Table</span></h2>
+      <details class="adv"><summary>Advanced: edit ohms/1000ft (defaults to NEC Ch.9 Table 8, 75°C copper)</summary>
+        <table class="wire-table" id="wireTableEditor"></table>
+      </details>
+    </div>
+    <div class="panel-section">
+      <h2><span class="htitle">Diagnostics</span></h2>
+      <div class="tool-hint" style="padding:0 0 8px;">Runs a fixed set of hand-checked and reference-file-derived test circuits against the live calculation engine — a regression check that your current session hasn't accidentally broken the math. Your own layout is untouched; it's restored automatically when the tests finish.</div>
+      <button class="hdr-btn primary" id="btnRunTests" style="width:100%;">Run Self-Test Suite</button>
+      <div id="testResults" style="margin-top:10px;"></div>
+    </div>
+    <div class="panel-section" style="flex:1;">
+      <h2><span class="htitle">Conduit Runs</span></h2>
+      <div id="segmentsTableWrap"><div class="empty-hint">No conduit runs yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+/* ============================================================
+   WIRE / AMPACITY REFERENCE (NEC Ch.9 Table 8, 75°C copper DC resistance)
+   Editable at runtime via state.wireTable (ohmPerKft only; ampacity fixed reference)
+   ============================================================ */
+// Matches the firm's own "Tables" sheet from the Circuit Analysis Excel
+// workbook exactly (75°C copper resistance; ampacity is that table's own
+// 0.8-derated values for 4–6 current-carrying conductors) — data only,
+// current/VD calculation formulas in this app are unchanged.
+const WIRE_AMPACITY = { '12':20, '10':24, '8':32, '6':44, '4':56, '2':76 };
+const WIRE_DEFAULT_OHMS = { '12':2.01, '10':1.26, '8':0.809, '6':0.51, '4':0.321, '2':0.201 };
+const WIRE_ORDER = ['12','10','8','6','4','2'];
+// Bump this if the shape of a saved .json layout ever changes in a way that
+// isn't just "new optional field" (e.g. renaming a field, changing a type).
+// Older/newer files aren't rejected — this just lets Load Layout tell the
+// user something useful instead of a bare parse failure.
+const SCHEMA_VERSION = 1;
+function wireLabel(size){ return '#'+size+' AWG'; }
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = {
+  systemVoltage: 240, phase: 1, vdThreshold: 5, scaleFtPerPx: 0.5,
+  bgImage: null, bgOpacity: 0.4, bgVisible: true, zoom: 1,
+  wireTable: JSON.parse(JSON.stringify(WIRE_DEFAULT_OHMS)),
+  nodes: [], edges: [],
+  mode: 'select', connectFirst: null,
+  selectedId: null, selectedKind: null,
+  highlightEdgeIds: new Set(), _highlightTimer: null,
+};
+let idCounter = 1;
+function newId(prefix){ return prefix + '_' + (idCounter++); }
+function wireR(size){ return (state.wireTable[size] != null) ? state.wireTable[size] : WIRE_DEFAULT_OHMS[size]; }
+
+/* ============================================================
+   DOM REFS
+   ============================================================ */
+const svg = document.getElementById('svg');
+const edgesLayer = document.getElementById('edgesLayer');
+const nodesLayer = document.getElementById('nodesLayer');
+const modeBanner = document.getElementById('modeBanner');
+const inspector = document.getElementById('inspector');
+const summaryGrid = document.getElementById('summaryGrid');
+const lcSummaryBlocks = document.getElementById('lcSummaryBlocks');
+const statusLine = document.getElementById('statusLine');
+const segmentsTableWrap = document.getElementById('segmentsTableWrap');
+const warningsSection = document.getElementById('warningsSection');
+const warningsList = document.getElementById('warningsList');
+const wireTableEditor = document.getElementById('wireTableEditor');
+const modalRoot = document.getElementById('modalRoot');
+
+document.getElementById('sysVoltage').addEventListener('change', e => { state.systemVoltage = Number(e.target.value); renderCanvasAndPanels(); });
+document.getElementById('sysPhase').addEventListener('change', e => { state.phase = Number(e.target.value); renderCanvasAndPanels(); });
+document.getElementById('vdThreshold').addEventListener('input', e => { state.vdThreshold = Number(e.target.value) || 5; renderCanvasAndPanels(); });
+document.getElementById('scaleFtPerPx').addEventListener('input', e => { state.scaleFtPerPx = Number(e.target.value) || 0.5; });
+
+function renderWireTableEditor(){
+  wireTableEditor.innerHTML = `<tr><th>Wire</th><th>Ohm/1000ft</th><th>Ampacity (ref)</th></tr>` +
+    WIRE_ORDER.map(w => `<tr>
+      <td>${wireLabel(w)}</td>
+      <td><input type="number" step="0.001" data-wire="${w}" class="wireOhmInput" value="${wireR(w)}"></td>
+      <td style="color:var(--ink-soft);">${WIRE_AMPACITY[w]} A</td>
+    </tr>`).join('');
+  wireTableEditor.querySelectorAll('.wireOhmInput').forEach(inp => {
+    inp.addEventListener('input', e => {
+      state.wireTable[e.target.dataset.wire] = Number(e.target.value) || WIRE_DEFAULT_OHMS[e.target.dataset.wire];
+      renderCanvasAndPanels();
+    });
+  });
+}
+renderWireTableEditor();
+
+document.querySelectorAll('.tool-btn[data-mode]').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+function setMode(mode){
+  state.mode = mode; state.connectFirst = null;
+  document.querySelectorAll('.tool-btn[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  const banners = {
+    'add-source': 'Click the canvas to place a Load Center',
+    'add-pole': 'Click the canvas to place a Light Pole',
+    'add-jbox': 'Click the canvas to place a Junction / Pull Box',
+    'connect': 'Click a start point, then an end point to run conduit  ·  Esc to cancel',
+    'delete': 'Click a pole, box, or conduit run to delete it',
+    'select': '',
+  };
+  const cursors = {
+    'add-source': 'copy', 'add-pole': 'copy', 'add-jbox': 'copy',
+    'connect': 'crosshair', 'delete': 'not-allowed', 'select': 'default',
+  };
+  svg.style.cursor = cursors[mode] || 'default';
+  modeBanner.style.background = '';
+  if (banners[mode]) { modeBanner.style.display = 'block'; modeBanner.textContent = banners[mode]; }
+  else { modeBanner.style.display = 'none'; }
+}
+setMode('select');
+
+// Brief, impossible-to-miss feedback for actions that would otherwise fail silently
+// (e.g. a Draw Conduit click that lands just off a node — the #1 cause of a branch
+// that looks connected on screen but was never actually linked back to the Load Center).
+let _bannerRevertTimer = null;
+function flashModeBanner(message){
+  clearTimeout(_bannerRevertTimer);
+  const prevText = modeBanner.textContent, prevDisplay = modeBanner.style.display;
+  modeBanner.style.display = 'block';
+  modeBanner.style.background = 'var(--red)';
+  modeBanner.style.color = '#fff';
+  modeBanner.textContent = message;
+  _bannerRevertTimer = setTimeout(() => {
+    modeBanner.style.background = '';
+    modeBanner.style.color = '';
+    modeBanner.textContent = prevText;
+    modeBanner.style.display = prevDisplay;
+  }, 1400);
+}
+
+document.getElementById('btnBulkApply').addEventListener('click', () => {
+  const w = Number(document.getElementById('bulkWatts').value);
+  if (!(w >= 0)) { alert('Enter a wattage value.'); return; }
+  const filter = document.getElementById('bulkCircuit').value.trim();
+  let count = 0;
+  state.nodes.forEach(n => {
+    if (n.type !== 'pole') return;
+    if (filter && (n.circuit||'') !== filter) return;
+    n.watts = w; n.ampsOverride = null; count++;
+  });
+  document.getElementById('bulkResult').textContent = count ? `Updated ${count} pole${count===1?'':'s'} to ${w}W.` : 'No matching poles found.';
+  render();
+});
+
+/* ============================================================
+   BACKGROUND ROADWAY IMAGE
+   ============================================================ */
+document.getElementById('bgUpload').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    state.bgImage = ev.target.result;
+    const img = new Image();
+    img.onload = () => {
+      let existing = svg.querySelector('image#bgImageEl');
+      if (existing) existing.remove();
+      const imageEl = document.createElementNS('http://www.w3.org/2000/svg','image');
+      imageEl.setAttribute('id','bgImageEl'); imageEl.setAttribute('href', state.bgImage);
+      imageEl.setAttribute('x', 0); imageEl.setAttribute('y', 0);
+      imageEl.setAttribute('width', img.width); imageEl.setAttribute('height', img.height);
+      imageEl.setAttribute('opacity', state.bgVisible ? state.bgOpacity : 0);
+      svg.insertBefore(imageEl, svg.firstChild.nextSibling);
+    };
+    img.src = state.bgImage;
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('bgOpacity').addEventListener('input', e => {
+  state.bgOpacity = Number(e.target.value);
+  const imageEl = svg.querySelector('image#bgImageEl'); if (imageEl && state.bgVisible) imageEl.setAttribute('opacity', state.bgOpacity);
+});
+document.getElementById('bgToggle').addEventListener('change', e => {
+  state.bgVisible = e.target.checked;
+  const imageEl = svg.querySelector('image#bgImageEl');
+  if (imageEl) imageEl.setAttribute('opacity', state.bgVisible ? state.bgOpacity : 0);
+});
+document.getElementById('btnClearBg').addEventListener('click', () => {
+  state.bgImage = null; const imageEl = svg.querySelector('image#bgImageEl'); if (imageEl) imageEl.remove();
+});
+
+/* ============================================================
+   ZOOM + PAN
+   ============================================================ */
+const canvasWrapEl = document.getElementById('canvasWrap');
+function applyZoom(){
+  svg.style.transform = 'scale(' + state.zoom + ')';
+  svg.style.transformOrigin = '0 0';
+  document.getElementById('zoomLabel').textContent = Math.round(state.zoom * 100) + '%';
+}
+// Zoom while keeping the given viewport point (or the canvas center, if omitted) visually fixed.
+function zoomAtPoint(newZoom, clientX, clientY){
+  newZoom = Math.min(2.5, Math.max(0.3, +newZoom.toFixed(2)));
+  const wrapRect = canvasWrapEl.getBoundingClientRect();
+  const px = (clientX != null ? clientX : wrapRect.left + wrapRect.width/2) - wrapRect.left;
+  const py = (clientY != null ? clientY : wrapRect.top + wrapRect.height/2) - wrapRect.top;
+  const canvasX = (canvasWrapEl.scrollLeft + px) / state.zoom;
+  const canvasY = (canvasWrapEl.scrollTop + py) / state.zoom;
+  state.zoom = newZoom;
+  applyZoom();
+  canvasWrapEl.scrollLeft = canvasX * state.zoom - px;
+  canvasWrapEl.scrollTop = canvasY * state.zoom - py;
+}
+document.getElementById('btnZoomIn').addEventListener('click', () => zoomAtPoint(state.zoom + 0.1));
+document.getElementById('btnZoomOut').addEventListener('click', () => zoomAtPoint(state.zoom - 0.1));
+document.getElementById('btnZoomReset').addEventListener('click', () => zoomAtPoint(1));
+// Creates an edge without the UI side-effects (selection, single-item flash)
+// that tryCreateEdge has — used when wiring many edges at once.
+function createEdgeSilent(fromId, toId){
+  const fromNode = state.nodes.find(n=>n.id===fromId), toNode = state.nodes.find(n=>n.id===toId);
+  const dist = Math.hypot(fromNode.x-toNode.x, fromNode.y-toNode.y) * state.scaleFtPerPx;
+  const edge = { id: newId('e'), fromId, toId, lengthFt: Math.max(1, Math.round(dist)), wireSize: '10' };
+  state.edges.push(edge);
+  return edge;
+}
+
+// Greedy nearest-neighbor chain: starting at the Load Center, repeatedly
+// connects to the closest still-unconnected pole/box, then continues from
+// there. Produces one continuous run — a reasonable starting topology for a
+// linear layout (e.g. poles along a road corridor) that's much faster than
+// manually drawing dozens of individual conduit runs, and every resulting
+// edge is a normal, fully-editable conduit run afterward (reposition,
+// re-splice, change wire size, delete individual links, etc.).
+function autoConnectChain(sourceId){
+  const parentCount = {};
+  state.edges.forEach(e => { parentCount[e.toId] = (parentCount[e.toId]||0) + 1; });
+  let current = state.nodes.find(n => n.id === sourceId);
+  if (!current) return 0;
+  let remaining = state.nodes.filter(n => n.type !== 'source' && (parentCount[n.id]||0) === 0);
+  let count = 0;
+  while (remaining.length){
+    let bestIdx = -1, bestDist = Infinity;
+    remaining.forEach((n,i) => { const d = Math.hypot(n.x-current.x, n.y-current.y); if (d < bestDist) { bestDist = d; bestIdx = i; } });
+    const next = remaining[bestIdx];
+    createEdgeSilent(current.id, next.id);
+    count++;
+    current = next;
+    remaining.splice(bestIdx, 1);
+  }
+  return count;
+}
+
+document.getElementById('btnAutoConnect').addEventListener('click', () => {
+  const sources = state.nodes.filter(n => n.type === 'source');
+  if (sources.length === 0) { flashModeBanner('Place a Load Center first — Auto-Connect needs somewhere to start the chain from.'); return; }
+  const parentCount = {};
+  state.edges.forEach(e => { parentCount[e.toId] = (parentCount[e.toId]||0) + 1; });
+  const unconnectedCount = state.nodes.filter(n => n.type !== 'source' && (parentCount[n.id]||0) === 0).length;
+  if (unconnectedCount === 0) { flashModeBanner('Nothing to connect — every pole/box already has an incoming run.'); return; }
+
+  function runFrom(sourceId){
+    const n = autoConnectChain(sourceId);
+    growCanvasToFit();
+    render();
+    alert(`Auto-Connect complete: chained ${n} point(s) into one run off this Load Center. Every link is a normal conduit run — edit lengths/wire sizes, or re-splice individual points, same as if you'd drawn them by hand.`);
+  }
+
+  if (sources.length === 1) { runFrom(sources[0].id); return; }
+  modalRoot.innerHTML = `
+    <div class="modal-overlay" id="autoConnModal">
+      <div class="modal-box">
+        <h3>Auto-Connect Chain</h3>
+        <div class="empty-hint" style="margin-bottom:12px;">${unconnectedCount} unconnected point(s) found. Which Load Center should the chain start from?</div>
+        <div class="field-row"><label>Load Center</label><select id="ac_source">${sources.map(s=>`<option value="${s.id}">${escapeHtml(s.label)}</option>`).join('')}</select></div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="ac_cancel">Cancel</button>
+          <button class="btn-primary" id="ac_go">Connect</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('ac_cancel').addEventListener('click', () => { modalRoot.innerHTML = ''; });
+  document.getElementById('ac_go').addEventListener('click', () => {
+    const id = document.getElementById('ac_source').value;
+    modalRoot.innerHTML = '';
+    runFrom(id);
+  });
+});
+
+// AGi32 exports never include a Load Center (AGi32 has no concept of the
+// electrical source) — if an import lands a pile of poles into a layout with
+// zero Load Centers, leaving them all just floating and flagged "not
+// connected" is a bad first impression. Auto-place one near the import so
+// there's something to connect to immediately.
+function ensureLoadCenterExists(importedNodes){
+  if (state.nodes.some(n => n.type === 'source')) return null;
+  if (importedNodes.length === 0) return null;
+  const xs = importedNodes.map(n=>n.x), ys = importedNodes.map(n=>n.y);
+  const minX = Math.min(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const src = {
+    id: newId('n'), type:'source', x: Math.max(60, minX - 160), y: (minY+maxY)/2,
+    label:'Load Center A', watts:0, ampsOverride:null, pf:1, circuit:'',
+    breakerAmps:20, voltageOverride:null, phaseOverride:null,
+  };
+  state.nodes.push(src);
+  return src;
+}
+
+// The SVG canvas has a fixed pixel width/height and no viewBox, so anything
+// placed beyond its current bounds is clipped by the SVG itself — not just
+// scrolled out of view, genuinely invisible. Large real-world imports (a
+// highway corridor, a big campus) can easily land poles far outside the
+// original 2200x1500 canvas. This grows the canvas to actually contain
+// every node (never shrinks below the original size).
+const CANVAS_MIN_W = 2200, CANVAS_MIN_H = 1500;
+function growCanvasToFit(marginPx){
+  marginPx = marginPx || 200;
+  if (state.nodes.length === 0) return;
+  const maxX = Math.max(...state.nodes.map(n=>n.x)), maxY = Math.max(...state.nodes.map(n=>n.y));
+  const w = Math.max(CANVAS_MIN_W, Math.ceil(maxX + marginPx));
+  const h = Math.max(CANVAS_MIN_H, Math.ceil(maxY + marginPx));
+  svg.setAttribute('width', w);
+  svg.setAttribute('height', h);
+  const bgRect = svg.querySelector('rect[fill="url(#gridPattern)"]');
+  if (bgRect) { bgRect.setAttribute('width', w); bgRect.setAttribute('height', h); }
+}
+
+// Zooms out (if needed) and scrolls so every node is visible in the viewport —
+// the "did my import actually work" sanity check for large-extent layouts.
+function fitViewToContent(){
+  if (state.nodes.length === 0) return;
+  const xs = state.nodes.map(n=>n.x), ys = state.nodes.map(n=>n.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const bboxW = Math.max(1, maxX - minX), bboxH = Math.max(1, maxY - minY);
+  const wrapRect = canvasWrapEl.getBoundingClientRect();
+  const pad = 80;
+  const fitZoom = Math.min((wrapRect.width - pad*2) / bboxW, (wrapRect.height - pad*2) / bboxH, 1);
+  state.zoom = Math.min(2.5, Math.max(0.3, +fitZoom.toFixed(2)));
+  applyZoom();
+  const centerX = (minX + maxX) / 2, centerY = (minY + maxY) / 2;
+  canvasWrapEl.scrollLeft = centerX * state.zoom - wrapRect.width/2;
+  canvasWrapEl.scrollTop = centerY * state.zoom - wrapRect.height/2;
+}
+
+// Plain mouse wheel / trackpad scroll = zoom in/out, centered on the cursor.
+canvasWrapEl.addEventListener('wheel', evt => {
+  evt.preventDefault();
+  const delta = evt.deltaY > 0 ? -0.1 : 0.1;
+  zoomAtPoint(state.zoom + delta, evt.clientX, evt.clientY);
+}, { passive:false });
+
+// Hold the middle mouse button to drag-pan the canvas.
+let isPanning = false, panStart = {x:0,y:0}, scrollStart = {x:0,y:0};
+canvasWrapEl.addEventListener('mousedown', evt => {
+  if (evt.button !== 1) return;
+  evt.preventDefault();
+  isPanning = true;
+  panStart = { x: evt.clientX, y: evt.clientY };
+  scrollStart = { x: canvasWrapEl.scrollLeft, y: canvasWrapEl.scrollTop };
+  canvasWrapEl.style.cursor = 'grabbing';
+  svg.style.cursor = 'grabbing';
+});
+window.addEventListener('mousemove', evt => {
+  if (!isPanning) return;
+  canvasWrapEl.scrollLeft = scrollStart.x - (evt.clientX - panStart.x);
+  canvasWrapEl.scrollTop = scrollStart.y - (evt.clientY - panStart.y);
+});
+window.addEventListener('mouseup', evt => {
+  if (evt.button === 1) { isPanning = false; canvasWrapEl.style.cursor = ''; svg.style.cursor = ''; }
+});
+canvasWrapEl.addEventListener('auxclick', evt => { if (evt.button === 1) evt.preventDefault(); });
+
+// Keyboard shortcuts: Escape backs out of the current action, Delete/Backspace
+// removes whatever's selected. Skipped while typing in an input/select so it
+// doesn't fight with normal text editing in the side panel.
+window.addEventListener('keydown', evt => {
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if (evt.key === 'Escape') {
+    if (state.connectFirst) { state.connectFirst = null; render(); return; }
+    if (state.mode !== 'select') { setMode('select'); return; }
+    if (state.selectedId) { selectItem(null, null); render(); }
+    return;
+  }
+  if (evt.key === 'Delete' || evt.key === 'Backspace') {
+    if (!state.selectedId) return;
+    evt.preventDefault();
+    if (state.selectedKind === 'node') deleteNodeCascade(state.selectedId);
+    else if (state.selectedKind === 'edge') deleteEdge(state.selectedId);
+    render();
+  }
+});
+
+applyZoom();
+
+/* ============================================================
+   CANVAS INTERACTION (select / place / connect / delete / drag)
+   ============================================================ */
+function getCanvasPos(evt){ const rect = svg.getBoundingClientRect(); return { x: (evt.clientX - rect.left) / state.zoom, y: (evt.clientY - rect.top) / state.zoom }; }
+let dragNode = null, dragOffset = {x:0,y:0};
+
+svg.addEventListener('click', evt => {
+  if (dragNode) return;
+  const pos = getCanvasPos(evt);
+  const clickedNode = findNodeNear(pos);
+  const clickedEdge = clickedNode ? null : findEdgeNear(pos);
+
+  if (state.mode === 'add-source' || state.mode === 'add-pole' || state.mode === 'add-jbox') {
+    if (clickedNode) return;
+    const type = state.mode === 'add-source' ? 'source' : (state.mode === 'add-pole' ? 'pole' : 'jbox');
+    const node = {
+      id: newId('n'), type, x: pos.x, y: pos.y,
+      label: type === 'source' ? ('Load Center ' + String.fromCharCode(65 + state.nodes.filter(n=>n.type==='source').length)) : (type === 'pole' ? 'Pole ' + (state.nodes.filter(n=>n.type==='pole').length+1) : 'JB ' + (state.nodes.filter(n=>n.type==='jbox').length+1)),
+      watts: type === 'pole' ? 150 : 0, ampsOverride: null, pf: 1, circuit: '',
+      breakerAmps: type === 'source' ? 20 : null,
+      voltageOverride: null, phaseOverride: null,
+    };
+    state.nodes.push(node);
+    selectItem(node.id, 'node');
+    render();
+    return;
+  }
+
+  if (state.mode === 'connect') {
+    if (!clickedNode) { flashModeBanner('No pole/box/Load Center there — click directly on a point to connect it.'); return; }
+    if (!state.connectFirst) { state.connectFirst = clickedNode.id; render(); return; }
+    if (state.connectFirst === clickedNode.id) { state.connectFirst = null; render(); return; }
+    tryCreateEdge(state.connectFirst, clickedNode.id);
+    state.connectFirst = null; render();
+    return;
+  }
+
+  if (state.mode === 'delete') {
+    if (clickedNode) { deleteNodeCascade(clickedNode.id); render(); return; }
+    if (clickedEdge) { deleteEdge(clickedEdge.id); render(); return; }
+    return;
+  }
+
+  if (clickedNode) { selectItem(clickedNode.id, 'node'); render(); return; }
+  if (clickedEdge) { selectItem(clickedEdge.id, 'edge'); render(); return; }
+  selectItem(null, null); render();
+});
+
+svg.addEventListener('mousedown', evt => {
+  if (state.mode !== 'select' || evt.button !== 0) return;
+  const pos = getCanvasPos(evt);
+  const node = findNodeNear(pos);
+  if (node) { dragNode = node; dragOffset = { x: pos.x - node.x, y: pos.y - node.y }; }
+});
+svg.addEventListener('mousemove', evt => {
+  if (!dragNode) return;
+  const pos = getCanvasPos(evt);
+  dragNode.x = pos.x - dragOffset.x; dragNode.y = pos.y - dragOffset.y;
+  renderCanvasAndPanels();
+});
+window.addEventListener('mouseup', () => { setTimeout(()=>{ dragNode = null; }, 0); });
+
+function findNodeNear(pos, radius=22){
+  let best = null, bestDist = radius;
+  state.nodes.forEach(n => { const d = Math.hypot(n.x-pos.x, n.y-pos.y); if (d < bestDist) { bestDist = d; best = n; } });
+  return best;
+}
+function findEdgeNear(pos, tolerance=8){
+  let best = null, bestDist = tolerance;
+  state.edges.forEach(e => {
+    const a = state.nodes.find(n=>n.id===e.fromId), b = state.nodes.find(n=>n.id===e.toId);
+    if (!a || !b) return;
+    const d = pointToSegmentDist(pos, a, b);
+    if (d < bestDist) { bestDist = d; best = e; }
+  });
+  return best;
+}
+function pointToSegmentDist(p, a, b){
+  const l2 = (a.x-b.x)**2 + (a.y-b.y)**2;
+  if (l2 === 0) return Math.hypot(p.x-a.x, p.y-a.y);
+  let t = ((p.x-a.x)*(b.x-a.x) + (p.y-a.y)*(b.y-a.y)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x-(a.x+t*(b.x-a.x)), p.y-(a.y+t*(b.y-a.y)));
+}
+
+/* ============================================================
+   TREE RULES / EDGE CREATION  (multiple independent trees allowed)
+   ============================================================ */
+function tryCreateEdge(fromId, toId){
+  const fromNode = state.nodes.find(n=>n.id===fromId), toNode = state.nodes.find(n=>n.id===toId);
+  if (!fromNode || !toNode) return;
+  if (toNode.type === 'source') { flashModeBanner('A Load Center can\'t receive power from another point — it\'s the root of its own circuit.'); return; }
+  if (state.edges.some(e => e.toId === toId)) { flashModeBanner('That point already has an incoming run — delete the existing one first to reroute it.'); return; }
+  if (wouldCreateCycle(fromId, toId)) { flashModeBanner('That connection would create a loop in the circuit.'); return; }
+  const dist = Math.hypot(fromNode.x-toNode.x, fromNode.y-toNode.y) * state.scaleFtPerPx;
+  const edge = { id: newId('e'), fromId, toId, lengthFt: Math.max(1, Math.round(dist)), wireSize: '10' };
+  state.edges.push(edge);
+  selectItem(edge.id, 'edge');
+}
+function wouldCreateCycle(fromId, toId){
+  let cur = fromId; const guard = new Set();
+  while (cur) {
+    if (guard.has(cur)) return true; guard.add(cur);
+    const parentEdge = state.edges.find(e => e.toId === cur);
+    if (!parentEdge) break;
+    if (parentEdge.fromId === toId) return true;
+    cur = parentEdge.fromId;
+  }
+  return false;
+}
+
+/* ============================================================
+   DELETE
+   ============================================================ */
+function deleteEdge(edgeId){ state.edges = state.edges.filter(e => e.id !== edgeId); if (state.selectedId === edgeId) selectItem(null, null); }
+function deleteNodeCascade(nodeId){
+  const toDelete = new Set([nodeId]); let changed = true;
+  while (changed) { changed = false; state.edges.forEach(e => { if (toDelete.has(e.fromId) && !toDelete.has(e.toId)) { toDelete.add(e.toId); changed = true; } }); }
+  state.nodes = state.nodes.filter(n => !toDelete.has(n.id));
+  state.edges = state.edges.filter(e => !toDelete.has(e.fromId) && !toDelete.has(e.toId));
+  if (toDelete.has(state.selectedId)) selectItem(null, null);
+}
+
+/* ============================================================
+   SELECTION + INSPECTOR
+   ============================================================ */
+function selectItem(id, kind){ state.selectedId = id; state.selectedKind = kind; renderInspector(); }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderInspector(){
+  if (!state.selectedId) {
+    inspector.innerHTML = `<h2><span class="htitle">Inspector</span></h2><div class="empty-hint">Select a pole, box, load center, or conduit run to edit its details.</div>`;
+    return;
+  }
+  if (state.selectedKind === 'node') {
+    const n = state.nodes.find(x=>x.id===state.selectedId); if (!n) return;
+    const typeLabel = n.type === 'source' ? 'Load Center' : (n.type === 'pole' ? 'Light Pole' : 'Junction / Pull Box');
+    inspector.innerHTML = `
+      <h2><span class="htitle">${typeLabel}</span></h2>
+      <div class="field-row"><label>Label</label><input type="text" id="f_label" value="${escapeHtml(n.label)}"></div>
+      <div class="field-row"><label>Circuit (optional grouping, e.g. "A", "B(GH)")</label><input type="text" id="f_circuit" value="${escapeHtml(n.circuit||'')}"></div>
+      ${n.type !== 'source' ? `
+        <div class="field-row-inline">
+          <div class="field-row"><label>Load (Watts)</label><input type="number" id="f_watts" value="${n.watts}" min="0"></div>
+          <div class="field-row"><label>Amps (override)</label><input type="number" id="f_amps" value="${n.ampsOverride ?? ''}" placeholder="auto" min="0" step="0.01"></div>
+        </div>
+        <div class="tool-hint" style="padding:0 0 8px;">Leave Amps blank to auto-calculate from Watts ÷ Voltage.</div>
+        ${n.type === 'pole' ? `
+        <div class="field-row-inline">
+          <div class="field-row"><label>Mounting Height (ft)</label><input type="number" id="f_mh" value="${n.mountingHeightFt ?? ''}" placeholder="unset" min="0" step="0.5"></div>
+          <div class="field-row"><label>Orientation (°)</label><input type="number" id="f_orient" value="${n.orientDeg ?? ''}" placeholder="unset" min="0" max="360" step="1"></div>
+        </div>` : ''}
+      ` : `
+        <div class="field-row-inline">
+          <div class="field-row"><label>Breaker Size (A)</label><input type="number" id="f_breaker" value="${n.breakerAmps ?? 20}" min="1"></div>
+          <div class="field-row"><label>Voltage Override</label><input type="number" id="f_vover" value="${n.voltageOverride ?? ''}" placeholder="use ${state.systemVoltage}V"></div>
+        </div>
+        <div class="tool-hint" style="padding:0 0 8px;">NEC 210.20(A): a continuous load (street lighting) shouldn't exceed 80% of the breaker rating. This tool flags any circuit off this Load Center that does.</div>
+      `}
+      <button class="danger-btn" id="f_delete">Delete ${typeLabel}</button>
+    `;
+    document.getElementById('f_label').addEventListener('input', e => { n.label = e.target.value; renderCanvasAndPanels(); });
+    document.getElementById('f_circuit').addEventListener('input', e => { n.circuit = e.target.value; renderCanvasAndPanels(); });
+    if (n.type !== 'source') {
+      document.getElementById('f_watts').addEventListener('input', e => { n.watts = Number(e.target.value)||0; flashEdges(ancestorEdgeIds(n.id)); });
+      document.getElementById('f_amps').addEventListener('input', e => { n.ampsOverride = e.target.value === '' ? null : Number(e.target.value); flashEdges(ancestorEdgeIds(n.id)); });
+      const mhEl = document.getElementById('f_mh');
+      if (mhEl) mhEl.addEventListener('input', e => { n.mountingHeightFt = e.target.value === '' ? null : Number(e.target.value); });
+      const orientEl = document.getElementById('f_orient');
+      if (orientEl) orientEl.addEventListener('input', e => { n.orientDeg = e.target.value === '' ? null : Number(e.target.value); });
+    } else {
+      document.getElementById('f_breaker').addEventListener('input', e => { n.breakerAmps = Number(e.target.value)||20; flashEdges(descendantEdgeIds(n.id)); });
+      document.getElementById('f_vover').addEventListener('input', e => { n.voltageOverride = e.target.value === '' ? null : Number(e.target.value); flashEdges(descendantEdgeIds(n.id)); });
+    }
+    document.getElementById('f_delete').addEventListener('click', () => { deleteNodeCascade(n.id); render(); });
+  }
+  if (state.selectedKind === 'edge') {
+    const e = state.edges.find(x=>x.id===state.selectedId); if (!e) return;
+    const fromN = state.nodes.find(n=>n.id===e.fromId), toN = state.nodes.find(n=>n.id===e.toId);
+    inspector.innerHTML = `
+      <h2><span class="htitle">Conduit Run</span></h2>
+      <div class="tool-hint" style="padding:0 0 8px;">${escapeHtml(fromN?.label||'?')} → ${escapeHtml(toN?.label||'?')}</div>
+      <div class="field-row-inline">
+        <div class="field-row"><label>Length (ft)</label><input type="number" id="f_len" value="${e.lengthFt}" min="1"></div>
+        <div class="field-row"><label>Copper Wire</label><select id="f_wire">${WIRE_ORDER.map(w => `<option value="${w}" ${e.wireSize===w?'selected':''}>${wireLabel(w)}</option>`).join('')}</select></div>
+      </div>
+      <button class="danger-btn" id="f_delete_edge">Delete This Conduit Run</button>
+    `;
+    document.getElementById('f_len').addEventListener('input', ev => { e.lengthFt = Math.max(1, Number(ev.target.value)||1); flashEdges(new Set([e.id, ...descendantEdgeIds(e.toId)])); });
+    document.getElementById('f_wire').addEventListener('change', ev => { e.wireSize = ev.target.value; flashEdges(new Set([e.id, ...descendantEdgeIds(e.toId)])); });
+    document.getElementById('f_delete_edge').addEventListener('click', () => { deleteEdge(e.id); render(); });
+  }
+}
+
+/* ============================================================
+   CIRCUIT CALCULATION — supports multiple independent Load Centers,
+   cumulative %VD based severity/flags, and NEC 80%-continuous-load
+   breaker check on every first-hop circuit leaving a Load Center.
+   ============================================================ */
+function nodeAmps(node, effV, effPhase){
+  const v = node.voltageOverride || effV || state.systemVoltage;
+  const phase = node.phaseOverride || effPhase || state.phase;
+  if (node.ampsOverride != null && node.ampsOverride !== '') return node.ampsOverride;
+  const w = node.watts || 0;
+  if (phase === 3) return w / (v * Math.sqrt(3) * (node.pf||1));
+  return w / (v * (node.pf||1));
+}
+
+function computeAllCircuits(){
+  const nodeMap = {}; state.nodes.forEach(n => nodeMap[n.id] = n);
+  const childrenOf = {}; state.nodes.forEach(n => childrenOf[n.id] = []);
+  state.edges.forEach(e => { if (childrenOf[e.fromId]) childrenOf[e.fromId].push(e); });
+  const sources = state.nodes.filter(n => n.type === 'source');
+  if (sources.length === 0) return null;
+
+  const downstreamWatts = {}, downstreamAmps = {};
+  // effV/effPhase are the owning Load Center's voltage/phase (including its own
+  // override, if any) — every descendant inherits these unless it has its own override.
+  function dfs(nodeId, effV, effPhase){
+    const node = nodeMap[nodeId];
+    let w = node.watts || 0, a = nodeAmps(node, effV, effPhase);
+    (childrenOf[nodeId]||[]).forEach(edge => { dfs(edge.toId, effV, effPhase); w += downstreamWatts[edge.toId]; a += downstreamAmps[edge.toId]; });
+    downstreamWatts[nodeId] = w; downstreamAmps[nodeId] = a;
+  }
+
+  const edgeResults = {}, cumulativeVD = {}, perSource = {};
+  sources.forEach(src => {
+    const localVoltage = src.voltageOverride || state.systemVoltage;
+    const localPhase = src.phaseOverride || state.phase;
+    dfs(src.id, localVoltage, localPhase);
+    cumulativeVD[src.id] = 0;
+    function dfs2(nodeId, vdSoFar){
+      cumulativeVD[nodeId] = vdSoFar;
+      (childrenOf[nodeId]||[]).forEach(edge => {
+        const I = downstreamAmps[edge.toId];
+        const R = wireR(edge.wireSize);
+        const D = edge.lengthFt;
+        const mult = localPhase === 3 ? Math.sqrt(3) : 2;
+        const VD = mult * I * D * R / 1000;
+        const cumVD = vdSoFar + VD;
+        const cumPct = (cumVD / localVoltage) * 100;
+        const isAmpacityExceeded = I > WIRE_AMPACITY[edge.wireSize];
+        const isContinuousDutyMarginal = !isAmpacityExceeded && (I * 1.25 > WIRE_AMPACITY[edge.wireSize]);
+        edgeResults[edge.id] = {
+          current: I, voltageDrop: VD, pctVD: (VD/localVoltage)*100,
+          cumulativeVD: cumVD, cumulativePct: cumPct,
+          exceedsAmpacity: isAmpacityExceeded,
+          exceedsContinuousDuty: isContinuousDutyMarginal,
+          exceedsVD: cumPct > state.vdThreshold,
+          sourceId: src.id,
+        };
+        dfs2(edge.toId, cumVD);
+      });
+    }
+    dfs2(src.id, 0);
+    const breakerAmps = src.breakerAmps || 20;
+    const maxContinuous = breakerAmps * 0.8;
+    const firstHops = (childrenOf[src.id]||[]).map(e => ({
+      edgeId: e.id, current: downstreamAmps[e.toId], exceedsBreaker: downstreamAmps[e.toId] > maxContinuous,
+    }));
+    perSource[src.id] = {
+      label: src.label, totalWatts: downstreamWatts[src.id], totalAmps: downstreamAmps[src.id],
+      breakerAmps, maxContinuous, firstHops, voltage: localVoltage, phase: localPhase,
+    };
+  });
+
+  let totalWatts = 0, totalAmps = 0;
+  sources.forEach(s => { totalWatts += downstreamWatts[s.id]; totalAmps += downstreamAmps[s.id]; });
+
+  return {
+    sources, edgeResults, cumulativeVD, perSource, totalWatts, totalAmps,
+    poleCount: state.nodes.filter(n=>n.type==='pole').length,
+    boxCount: state.nodes.filter(n=>n.type==='jbox').length,
+    downstreamAmps,
+  };
+}
+
+function buildValidationWarnings(circuit){
+  const warnings = [];
+
+  // --- Structural checks: run even if there's no valid circuit yet ---
+  const parentCount = {};
+  state.edges.forEach(e => { parentCount[e.toId] = (parentCount[e.toId]||0) + 1; });
+  state.nodes.forEach(n => {
+    if (n.type === 'source') return;
+    const count = parentCount[n.id] || 0;
+    const kind = n.type === 'pole' ? 'Light Pole' : 'Junction Box';
+    if (count === 0) {
+      warnings.push({ severity:'ERROR', objectType: kind, objectId: n.label, issue:'Not connected to any Load Center — this point and its load are completely excluded from every calculation, even though it appears on the canvas.', fix:'Use Draw Conduit to connect it. Click precisely on both endpoints — a missed click creates no connection and previously gave no warning.' });
+    } else if (count > 1) {
+      warnings.push({ severity:'ERROR', objectType: kind, objectId: n.label, issue:`Has ${count} incoming conduit runs — a point can only have one upstream feed. Its downstream load may be double-counted toward more than one path.`, fix:'Delete the extra incoming conduit run(s), keeping only one.' });
+    }
+  });
+  const idsSeen = new Set();
+  state.nodes.forEach(n => { if (idsSeen.has(n.id)) warnings.push({severity:'ERROR', objectType:'Node', objectId:n.id, issue:'Duplicate node ID.', fix:'Rename/remove the duplicate.'}); idsSeen.add(n.id); });
+
+  if (!circuit) return warnings;
+
+  // --- Electrical checks (need a valid, computed circuit) ---
+  Object.values(circuit.edgeResults).forEach(r => {
+    if (r.exceedsAmpacity) warnings.push({ severity:'ERROR', objectType:'Conduit Run', objectId:'', issue:`Current ${r.current.toFixed(2)}A exceeds the ampacity of the selected wire.`, fix:'Upsize the wire gauge on this run.' });
+    if (r.exceedsContinuousDuty) warnings.push({ severity:'WARNING', objectType:'Conduit Run', objectId:'', issue:`Current ${r.current.toFixed(2)}A is under the wire's ampacity, but 125% of it (${(r.current*1.25).toFixed(2)}A) exceeds that ampacity — this fails the NEC 210.19(A) continuous-load conductor sizing rule even though the wire won't overcurrent-trip.`, fix:'Upsize this conductor one size for continuous (street lighting) service.' });
+    if (r.exceedsVD) warnings.push({ severity:'WARNING', objectType:'Conduit Run', objectId:'', issue:`Cumulative voltage drop ${r.cumulativePct.toFixed(2)}% exceeds the ${state.vdThreshold}% limit.`, fix:'Upsize wire on this or an upstream run, or shorten the run.' });
+  });
+  Object.values(circuit.perSource).forEach(s => {
+    s.firstHops.forEach(fh => {
+      if (fh.exceedsBreaker) warnings.push({ severity:'ERROR', objectType:'Load Center', objectId: s.label, issue:`Circuit current ${fh.current.toFixed(2)}A exceeds 80% of the ${s.breakerAmps}A breaker (NEC 210.20(A) continuous-load rule).`, fix:'Upsize the breaker, split the circuit, or reduce connected load.' });
+    });
+  });
+  return warnings;
+}
+
+/* ============================================================
+   REGRESSION TEST SUITE — hand-checked and reference-file-derived
+   test circuits, run against the live computeAllCircuits() engine.
+   Swaps state.nodes/edges/settings out temporarily, restores after.
+   ============================================================ */
+function runSelfTests(){
+  const results = [];
+  function approxEqual(a,b,eps){ eps = eps||0.01; return Math.abs(a-b) <= eps; }
+  function assert(name, condition, detail){ results.push({ name, pass: !!condition, detail: detail||'' }); }
+
+  const saved = {
+    nodes: state.nodes, edges: state.edges, systemVoltage: state.systemVoltage,
+    phase: state.phase, vdThreshold: state.vdThreshold, wireTable: state.wireTable,
+  };
+
+  try {
+    state.wireTable = JSON.parse(JSON.stringify(WIRE_DEFAULT_OHMS));
+
+    // --- Test A: single straight run, hand-calculated ---
+    state.systemVoltage = 240; state.phase = 1; state.vdThreshold = 5;
+    state.nodes = [
+      { id:'lc', type:'source', watts:0, breakerAmps:20 },
+      { id:'p1', type:'pole', watts:150, ampsOverride:null },
+    ];
+    state.edges = [{ id:'e1', fromId:'lc', toId:'p1', lengthFt:100, wireSize:'10' }];
+    let c = computeAllCircuits();
+    assert('Single run: total watts = 150W', approxEqual(c.totalWatts,150,0.01), `got ${c.totalWatts}`);
+    assert('Single run: current = 0.625A (150W ÷ 240V)', approxEqual(c.edgeResults.e1.current,0.625,0.001), `got ${c.edgeResults.e1.current.toFixed(4)}`);
+    const expectedVD_A = 2 * 0.625 * 100 * WIRE_DEFAULT_OHMS['10'] / 1000;
+    assert(`Single run: VD matches hand calc (2×0.625A×100ft×${WIRE_DEFAULT_OHMS['10']}Ω/kft)`, approxEqual(c.edgeResults.e1.voltageDrop,expectedVD_A,0.001), `got ${c.edgeResults.e1.voltageDrop.toFixed(4)}, expected ${expectedVD_A.toFixed(4)}`);
+    assert('Single run: %VD matches hand calc', approxEqual(c.edgeResults.e1.cumulativePct,expectedVD_A/240*100,0.001), `got ${c.edgeResults.e1.cumulativePct.toFixed(4)}`);
+
+    // --- Test B: splice/branch circuit — same topology validated against the
+    // ADOT reference workbook's east-branch cumulative-current pattern ---
+    state.nodes = [
+      { id:'lc', type:'source', watts:0, breakerAmps:20 },
+      { id:'pb', type:'jbox', watts:0 },
+      { id:'p1', type:'pole', watts:150 },
+      { id:'p2', type:'pole', watts:150 },
+      { id:'sp', type:'jbox', watts:0 },
+      { id:'p3', type:'pole', watts:150 },
+      { id:'p4', type:'pole', watts:150 },
+    ];
+    state.edges = [
+      { id:'e1', fromId:'lc', toId:'pb', lengthFt:100, wireSize:'8' },
+      { id:'e2', fromId:'pb', toId:'p1', lengthFt:120, wireSize:'10' },
+      { id:'e3', fromId:'p1', toId:'p2', lengthFt:150, wireSize:'10' },
+      { id:'e4', fromId:'p2', toId:'sp', lengthFt:100, wireSize:'10' },
+      { id:'e5', fromId:'sp', toId:'p3', lengthFt:90, wireSize:'12' },
+      { id:'e6', fromId:'sp', toId:'p4', lengthFt:90, wireSize:'12' },
+    ];
+    c = computeAllCircuits();
+    assert('Splice: total watts = 600W (4 × 150W)', approxEqual(c.totalWatts,600,0.01), `got ${c.totalWatts}`);
+    assert('Splice: total amps = 2.5A (600W ÷ 240V)', approxEqual(c.totalAmps,2.5,0.001), `got ${c.totalAmps.toFixed(4)}`);
+    assert('Splice: root run carries all 4 poles (2.5A)', approxEqual(c.edgeResults.e1.current,2.5,0.001), `got ${c.edgeResults.e1.current.toFixed(4)}`);
+    assert('Splice: leaf beyond splice carries only its own load (0.625A)', approxEqual(c.edgeResults.e5.current,0.625,0.001), `got ${c.edgeResults.e5.current.toFixed(4)}`);
+    assert('Splice: both branch legs off the splice carry equal current', approxEqual(c.edgeResults.e5.current, c.edgeResults.e6.current, 0.0001), `e5=${c.edgeResults.e5.current.toFixed(4)}, e6=${c.edgeResults.e6.current.toFixed(4)}`);
+
+    // --- Test C: NEC 210.19(A) continuous-duty check — current stays under
+    // the wire's rated ampacity, but 125% of it does not ---
+    state.nodes = [ { id:'lc', type:'source', watts:0, breakerAmps:100 }, { id:'p1', type:'pole', watts:4080 } ];
+    state.edges = [{ id:'e1', fromId:'lc', toId:'p1', lengthFt:10, wireSize:'12' }];
+    c = computeAllCircuits();
+    assert('Continuous-duty: 17A on #12 (20A rated) does not trip raw ampacity', c.edgeResults.e1.exceedsAmpacity === false, `exceedsAmpacity=${c.edgeResults.e1.exceedsAmpacity}`);
+    assert('Continuous-duty: same run fails the 125% NEC 210.19(A) rule', c.edgeResults.e1.exceedsContinuousDuty === true, `exceedsContinuousDuty=${c.edgeResults.e1.exceedsContinuousDuty}`);
+
+    // --- Test D: hard ampacity violation ---
+    state.nodes = [ { id:'lc', type:'source', watts:0, breakerAmps:100 }, { id:'p1', type:'pole', watts:6000 } ];
+    c = computeAllCircuits();
+    assert('Ampacity: 25A on #12 (20A rated) correctly flags OVER', c.edgeResults.e1.exceedsAmpacity === true, `exceedsAmpacity=${c.edgeResults.e1.exceedsAmpacity}`);
+
+    // --- Test E: NEC 210.20(A) 80%-of-breaker rule, isolated from wire sizing
+    // by using an oversized conductor so only the breaker check can fire ---
+    state.nodes = [ { id:'lc', type:'source', watts:0, breakerAmps:20 }, { id:'p1', type:'pole', watts:4080 } ];
+    state.edges = [{ id:'e1', fromId:'lc', toId:'p1', lengthFt:10, wireSize:'2' }];
+    c = computeAllCircuits();
+    const fh = c.perSource.lc.firstHops[0];
+    assert('Breaker rule: 17A trips the 80%-of-20A (16A) continuous limit', fh.exceedsBreaker === true, `current=${fh.current.toFixed(2)}A, max=${c.perSource.lc.maxContinuous}A`);
+    assert('Breaker rule: #2 wire itself shows no ampacity/continuous-duty false-positive', c.edgeResults.e1.exceedsAmpacity === false && c.edgeResults.e1.exceedsContinuousDuty === false, `amp=${c.edgeResults.e1.exceedsAmpacity}, cont=${c.edgeResults.e1.exceedsContinuousDuty}`);
+
+    // --- Test F: cumulative %VD threshold flagging, hand-calculated ---
+    state.vdThreshold = 5;
+    state.nodes = [ { id:'lc', type:'source', watts:0, breakerAmps:100 }, { id:'p1', type:'pole', watts:1000 } ];
+    state.edges = [{ id:'e1', fromId:'lc', toId:'p1', lengthFt:2000, wireSize:'12' }];
+    c = computeAllCircuits();
+    const expectedPct_F = (2 * (1000/240) * 2000 * WIRE_DEFAULT_OHMS['12'] / 1000) / 240 * 100;
+    assert('%VD: an intentionally long/thin run correctly exceeds the 5% limit', c.edgeResults.e1.exceedsVD === true, `cumPct=${c.edgeResults.e1.cumulativePct.toFixed(2)}%`);
+    assert('%VD: value matches hand calc', approxEqual(c.edgeResults.e1.cumulativePct,expectedPct_F,0.05), `got ${c.edgeResults.e1.cumulativePct.toFixed(2)}%, expected ${expectedPct_F.toFixed(2)}%`);
+
+    // --- Test G: three-phase multiplier uses √3, not 2 ---
+    state.phase = 3; state.vdThreshold = 5;
+    state.nodes = [ { id:'lc', type:'source', watts:0, breakerAmps:100 }, { id:'p1', type:'pole', watts:1000 } ];
+    state.edges = [{ id:'e1', fromId:'lc', toId:'p1', lengthFt:100, wireSize:'10' }];
+    c = computeAllCircuits();
+    const expectedI3ph = 1000 / (240*Math.sqrt(3));
+    assert('3-phase: current uses √3 in the denominator', approxEqual(c.edgeResults.e1.current, expectedI3ph, 0.001), `got ${c.edgeResults.e1.current.toFixed(4)}, expected ${expectedI3ph.toFixed(4)}`);
+    const expectedVD3ph = Math.sqrt(3) * expectedI3ph * 100 * WIRE_DEFAULT_OHMS['10'] / 1000;
+    assert('3-phase: VD uses √3 multiplier, not 2×', approxEqual(c.edgeResults.e1.voltageDrop, expectedVD3ph, 0.001), `got ${c.edgeResults.e1.voltageDrop.toFixed(4)}, expected ${expectedVD3ph.toFixed(4)}`);
+
+    // --- Test H: multiple independent Load Centers don't cross-contaminate totals ---
+    state.phase = 1;
+    state.nodes = [
+      { id:'lcA', type:'source', watts:0, breakerAmps:20 },
+      { id:'pA1', type:'pole', watts:150 },
+      { id:'lcB', type:'source', watts:0, breakerAmps:20 },
+      { id:'pB1', type:'pole', watts:300 },
+    ];
+    state.edges = [
+      { id:'e1', fromId:'lcA', toId:'pA1', lengthFt:50, wireSize:'10' },
+      { id:'e2', fromId:'lcB', toId:'pB1', lengthFt:50, wireSize:'10' },
+    ];
+    c = computeAllCircuits();
+    assert('Multi-LC: combined total watts = 450W (150+300)', approxEqual(c.totalWatts,450,0.01), `got ${c.totalWatts}`);
+    assert('Multi-LC: Load Center A total is independent (150W)', approxEqual(c.perSource.lcA.totalWatts,150,0.01), `got ${c.perSource.lcA.totalWatts}`);
+    assert('Multi-LC: Load Center B total is independent (300W)', approxEqual(c.perSource.lcB.totalWatts,300,0.01), `got ${c.perSource.lcB.totalWatts}`);
+
+    // --- Test I: a branch with no path back to any Load Center must be both
+    // excluded from totals AND loudly flagged — this is the exact bug class
+    // reported where a missed Draw Conduit click left a branch invisible to
+    // every calculation with no warning at all. ---
+    state.nodes = [
+      { id:'lc', type:'source', watts:0, breakerAmps:20, label:'lc' },
+      { id:'p1', type:'pole', watts:150, label:'p1' },
+      { id:'orphanRoot', type:'jbox', watts:0, label:'orphanRoot' },
+      { id:'orphanPole', type:'pole', watts:9999, label:'orphanPole' },
+    ];
+    state.edges = [
+      { id:'e1', fromId:'lc', toId:'p1', lengthFt:50, wireSize:'10' },
+      { id:'e2', fromId:'orphanRoot', toId:'orphanPole', lengthFt:5000, wireSize:'12' }, // never connects to 'lc'
+    ];
+    c = computeAllCircuits();
+    assert('Disconnected branch: excluded from total watts (150W, not 10149W)', approxEqual(c.totalWatts,150,0.01), `got ${c.totalWatts}`);
+    const disconnectedWarnings = buildValidationWarnings(c).filter(w => w.objectId === 'orphanRoot');
+    assert('Disconnected branch: the entry point of the orphaned island is flagged as an ERROR', disconnectedWarnings.length === 1 && disconnectedWarnings[0].severity === 'ERROR', `found ${disconnectedWarnings.length} warning(s)`);
+
+    // --- Test J: a node with two incoming conduit runs (shouldn't happen via
+    // the UI, but is a real risk after hand-edited imports) is flagged too ---
+    state.nodes = [
+      { id:'lc', type:'source', watts:0, breakerAmps:20, label:'lc' },
+      { id:'p1', type:'pole', watts:150, label:'p1' },
+      { id:'p2', type:'pole', watts:150, label:'p2' },
+      { id:'shared', type:'pole', watts:150, label:'shared' },
+    ];
+    state.edges = [
+      { id:'e1', fromId:'lc', toId:'p1', lengthFt:50, wireSize:'10' },
+      { id:'e2', fromId:'lc', toId:'p2', lengthFt:50, wireSize:'10' },
+      { id:'e3', fromId:'p1', toId:'shared', lengthFt:50, wireSize:'10' },
+      { id:'e4', fromId:'p2', toId:'shared', lengthFt:50, wireSize:'10' }, // 'shared' now has 2 parents
+    ];
+    c = computeAllCircuits();
+    const multiParentWarnings = buildValidationWarnings(c).filter(w => w.objectId === 'shared');
+    assert('Multi-parent node: flagged as ERROR warning', multiParentWarnings.length === 1 && multiParentWarnings[0].severity === 'ERROR', `found ${multiParentWarnings.length} warning(s)`);
+
+    // --- Test K: a Load Center's voltage override must propagate to every
+    // downstream pole's current calc, not just to the %VD denominator. A
+    // 208V-override LC feeding a 150W pole should show ~0.721A, not the
+    // 0.625A you'd get by (incorrectly) using the global 240V default. ---
+    state.systemVoltage = 240; state.phase = 1; state.vdThreshold = 5;
+    state.nodes = [
+      { id:'lc', type:'source', watts:0, breakerAmps:20, voltageOverride:208 },
+      { id:'p1', type:'pole', watts:150 },
+    ];
+    state.edges = [{ id:'e1', fromId:'lc', toId:'p1', lengthFt:100, wireSize:'10' }];
+    c = computeAllCircuits();
+    const expectedI208 = 150/208;
+    assert('Voltage override: downstream current uses the LC\'s 208V override, not the global 240V', approxEqual(c.edgeResults.e1.current, expectedI208, 0.001), `got ${c.edgeResults.e1.current.toFixed(4)}, expected ${expectedI208.toFixed(4)}`);
+
+    // --- Test L: Load Layout validation should reject a file with no
+    // nodes/edges arrays at all (not a Circuit Line file), but should be
+    // forgiving of individually malformed records within an otherwise valid
+    // file — skipping just the bad ones rather than failing the whole load. ---
+    const badFile = validateLayoutData({ foo: 'bar' });
+    assert('Load validation: rejects a file with no nodes/edges arrays', badFile.error === 'missing-nodes-or-edges', `got error=${badFile.error}`);
+
+    const messyFile = validateLayoutData({
+      tool: 'Circuit Line', schemaVersion: SCHEMA_VERSION,
+      nodes: [
+        { id:'n1', type:'source', x:100, y:100 },
+        { id:'n2', type:'pole', x:200, y:100, watts:150 },
+        { type:'pole', x:50, y:50 },        // missing id -> should be skipped
+        { id:'n3', type:'lamp', x:1, y:1 }, // invalid type -> should be skipped
+      ],
+      edges: [
+        { id:'e1', fromId:'n1', toId:'n2', lengthFt:100, wireSize:'10' },
+        { id:'e2', fromId:'n1', toId:'ghost', lengthFt:50, wireSize:'10' }, // dangling ref -> skipped
+      ],
+    });
+    assert('Load validation: keeps valid nodes, skips malformed ones', messyFile.validNodes.length === 2 && messyFile.validNodes.every(n=>['n1','n2'].includes(n.id)), `got ${messyFile.validNodes.length} valid node(s): ${messyFile.validNodes.map(n=>n.id).join(',')}`);
+    assert('Load validation: keeps valid edges, skips ones referencing a missing node', messyFile.validEdges.length === 1 && messyFile.validEdges[0].id === 'e1', `got ${messyFile.validEdges.length} valid edge(s)`);
+    assert('Load validation: reports skipped records in notes rather than failing silently', messyFile.notes.some(n=>/Skipped 2 malformed node/.test(n)) && messyFile.notes.some(n=>/Skipped 1 edge/.test(n)), `notes: ${JSON.stringify(messyFile.notes)}`);
+
+    const oldFile = validateLayoutData({ nodes:[{id:'n1',type:'source',x:0,y:0}], edges:[] }); // no schemaVersion at all
+    assert('Load validation: flags a missing schema version instead of assuming current', oldFile.notes.some(n=>/No version tag found/.test(n)), `notes: ${JSON.stringify(oldFile.notes)}`);
+
+    const futureFile = validateLayoutData({ nodes:[{id:'n1',type:'source',x:0,y:0}], edges:[], schemaVersion: SCHEMA_VERSION + 1 });
+    assert('Load validation: warns when the file is newer than this tool understands', futureFile.notes.some(n=>/newer version/.test(n)), `notes: ${JSON.stringify(futureFile.notes)}`);
+
+  } finally {
+    state.nodes = saved.nodes; state.edges = saved.edges; state.systemVoltage = saved.systemVoltage;
+    state.phase = saved.phase; state.vdThreshold = saved.vdThreshold; state.wireTable = saved.wireTable;
+  }
+  return results;
+}
+
+function renderTestResults(results){
+  const failCount = results.filter(r => !r.pass).length;
+  const summaryClass = failCount === 0 ? 'all-pass' : 'has-fail';
+  const summaryText = failCount === 0 ? `All ${results.length} tests passed.` : `${failCount} of ${results.length} tests FAILED — do not trust results until this is resolved.`;
+  document.getElementById('testResults').innerHTML = `
+    <div class="test-summary ${summaryClass}">${summaryText}</div>
+    ${results.map(r => `<div class="test-row"><span>${escapeHtml(r.name)}${r.pass?'':' — <span style=\"color:var(--red);\">'+escapeHtml(r.detail)+'</span>'}</span><span class="tstatus" style="color:${r.pass?'var(--green)':'var(--red)'};">${r.pass?'PASS':'FAIL'}</span></div>`).join('')}
+  `;
+}
+document.getElementById('btnRunTests').addEventListener('click', () => {
+  const results = runSelfTests();
+  renderTestResults(results);
+  render();
+});
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function iconFor(type){
+  if (type === 'source') return `<rect x="-16" y="-16" width="32" height="32" rx="4" fill="#C1793A" stroke="#EAF3F8" stroke-width="2"/><text x="0" y="5" text-anchor="middle" font-size="16" fill="#132A42" font-weight="700">⏚</text>`;
+  if (type === 'pole') return `<line x1="0" y1="-2" x2="0" y2="16" stroke="#EAF3F8" stroke-width="2.5"/><line x1="0" y1="-2" x2="10" y2="-2" stroke="#EAF3F8" stroke-width="2.5"/><circle cx="0" cy="-2" r="9" fill="#E8A33D" stroke="#EAF3F8" stroke-width="2"/>`;
+  return `<rect x="-11" y="-11" width="22" height="22" fill="#6FA8C7" stroke="#EAF3F8" stroke-width="2"/><text x="0" y="4" text-anchor="middle" font-size="9" fill="#132A42" font-weight="700">JB</text>`;
+}
+function severityColor(pct, threshold){ if (pct >= threshold) return '#D1483B'; if (pct >= threshold*0.5) return '#E8A33D'; return '#4F9B72'; }
+
+function render(){
+  renderCanvasAndPanels();
+  renderInspector();
+}
+
+function renderCanvasAndPanels(){
+  const circuit = computeAllCircuits();
+
+  edgesLayer.innerHTML = '';
+  state.edges.forEach(e => {
+    const a = state.nodes.find(n=>n.id===e.fromId), b = state.nodes.find(n=>n.id===e.toId);
+    if (!a || !b) return;
+    const res = circuit ? circuit.edgeResults[e.id] : null;
+    const color = res ? severityColor(res.cumulativePct, state.vdThreshold) : '#6FA8C7';
+    const isSelected = state.selectedKind === 'edge' && state.selectedId === e.id;
+    const isFlashing = state.highlightEdgeIds && state.highlightEdgeIds.has(e.id);
+    const midX = (a.x+b.x)/2, midY = (a.y+b.y)/2;
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.innerHTML = `
+      ${isFlashing ? `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#E0964F" stroke-width="10" stroke-linecap="round" opacity="0.45"/>` : ''}
+      <line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${color}" stroke-width="${isSelected?4:2.5}" stroke-dasharray="7,5"/>
+      <rect x="${midX-40}" y="${midY-16}" width="80" height="30" rx="4" fill="#0E2033" stroke="${isFlashing?'#E0964F':color}" stroke-width="${isFlashing?2:1.2}"/>
+      <text x="${midX}" y="${midY-3}" text-anchor="middle" font-size="10" font-family="IBM Plex Mono, monospace" fill="#EAF3F8">${e.lengthFt} ft • ${wireLabel(e.wireSize)}</text>
+      <text x="${midX}" y="${midY+9}" text-anchor="middle" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="${color}">${res ? res.current.toFixed(1)+'A • '+res.cumulativePct.toFixed(2)+'% cum' : ''}</text>
+    `;
+    edgesLayer.appendChild(g);
+  });
+
+  if (state.mode === 'connect' && state.connectFirst) {
+    const n = state.nodes.find(x=>x.id===state.connectFirst);
+    if (n) {
+      const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      ring.setAttribute('cx', n.x); ring.setAttribute('cy', n.y); ring.setAttribute('r', 26);
+      ring.setAttribute('fill','none'); ring.setAttribute('stroke','#E0964F'); ring.setAttribute('stroke-width','2'); ring.setAttribute('stroke-dasharray','4,3');
+      edgesLayer.appendChild(ring);
+    }
+  }
+
+  renderNodesOnly();
+  renderSummary(circuit);
+  renderWarnings(circuit);
+  renderSegmentsTable(circuit);
+}
+
+/* Highlight (briefly glow) the conduit runs affected by an edit, so changes are
+   visibly traceable as they trickle through the circuit, then fade after ~1.1s. */
+function flashEdges(edgeIdSet){
+  state.highlightEdgeIds = edgeIdSet;
+  renderCanvasAndPanels();
+  clearTimeout(state._highlightTimer);
+  state._highlightTimer = setTimeout(() => { state.highlightEdgeIds = new Set(); renderCanvasAndPanels(); }, 1100);
+}
+function ancestorEdgeIds(nodeId){
+  const path = new Set(); let cur = nodeId; const guard = new Set();
+  while (cur) {
+    if (guard.has(cur)) break; guard.add(cur);
+    const parentEdge = state.edges.find(e => e.toId === cur);
+    if (!parentEdge) break;
+    path.add(parentEdge.id); cur = parentEdge.fromId;
+  }
+  return path;
+}
+function descendantEdgeIds(nodeId){
+  const path = new Set();
+  const childrenOf = {};
+  state.edges.forEach(e => { childrenOf[e.fromId] = childrenOf[e.fromId]||[]; childrenOf[e.fromId].push(e); });
+  function collect(nid){ (childrenOf[nid]||[]).forEach(e => { path.add(e.id); collect(e.toId); }); }
+  collect(nodeId);
+  return path;
+}
+
+function renderNodesOnly(){
+  nodesLayer.innerHTML = '';
+  const parentCount = {};
+  state.edges.forEach(e => { parentCount[e.toId] = (parentCount[e.toId]||0) + 1; });
+  state.nodes.forEach(n => {
+    const isSelected = state.selectedKind === 'node' && state.selectedId === n.id;
+    const isDisconnected = n.type !== 'source' && (parentCount[n.id]||0) === 0;
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('transform', `translate(${n.x},${n.y})`);
+    g.style.cursor = 'pointer';
+    const sub = n.type === 'source' ? (n.breakerAmps ? n.breakerAmps+'A brk' : '') : (n.circuit ? 'Ckt '+n.circuit : '');
+    g.innerHTML = `
+      ${isSelected ? `<circle cx="0" cy="0" r="24" fill="none" stroke="#E0964F" stroke-width="2.5"/>` : ''}
+      ${isDisconnected ? `<circle cx="0" cy="0" r="20" fill="none" stroke="#D1483B" stroke-width="2.5" stroke-dasharray="3,3"/><circle cx="15" cy="-15" r="8" fill="#D1483B" stroke="#EAF3F8" stroke-width="1.5"/><text x="15" y="-11" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">!</text>` : ''}
+      ${iconFor(n.type)}
+      <text x="0" y="30" text-anchor="middle" font-size="11" font-family="Inter, sans-serif" font-weight="600" fill="${isDisconnected?'#D1483B':'#EAF3F8'}">${escapeHtml(n.label)}${isDisconnected?' (not connected)':''}</text>
+      ${sub ? `<text x="0" y="42" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#8FB4CC">${escapeHtml(sub)}</text>` : ''}
+    `;
+    nodesLayer.appendChild(g);
+  });
+}
+
+function renderSummary(circuit){
+  if (!circuit) {
+    lcSummaryBlocks.innerHTML = '';
+    summaryGrid.innerHTML = `<div class="summary-card" style="grid-column:1/3;"><div class="val">—</div><div class="lbl">Place at least one Load Center to begin</div></div>`;
+    statusLine.innerHTML = '';
+    return;
+  }
+  lcSummaryBlocks.innerHTML = circuit.sources.map(src => {
+    const s = circuit.perSource[src.id];
+    const breakerIssue = s.firstHops.some(f=>f.exceedsBreaker);
+    let lcWorstPct = 0;
+    Object.values(circuit.edgeResults).forEach(r => { if (r.sourceId === src.id && r.cumulativePct > lcWorstPct) lcWorstPct = r.cumulativePct; });
+    const lcPass = lcWorstPct <= state.vdThreshold;
+    return `<div class="lc-block">
+      <div class="lc-title"><span>${escapeHtml(s.label)}</span><span class="${breakerIssue?'flag-bad':'flag-ok'}">${breakerIssue?'BREAKER EXCEEDED':'OK'}</span></div>
+      <div class="lc-row"><span>Total Load</span><span>${s.totalWatts.toFixed(0)} W</span></div>
+      <div class="lc-row"><span>Total Amps</span><span>${s.totalAmps.toFixed(2)} A</span></div>
+      <div class="lc-row"><span>Breaker / 80% Max</span><span>${s.breakerAmps}A / ${s.maxContinuous.toFixed(1)}A</span></div>
+      <div class="lc-row"><span>Voltage / Phase</span><span>${s.voltage}V ${s.phase===3?'3φ':'1φ'}</span></div>
+      <div class="lc-row"><span>Worst-Case Cumulative %VD</span><span class="${lcPass?'flag-ok':'flag-bad'}">${lcWorstPct.toFixed(2)}% ${lcPass?'(PASS)':'(EXCEEDS)'}</span></div>
+    </div>`;
+  }).join('');
+
+  summaryGrid.innerHTML = `
+    <div class="summary-card"><div class="val">${circuit.totalWatts.toFixed(0)} W</div><div class="lbl">Total Load (All LCs)</div></div>
+    <div class="summary-card"><div class="val">${circuit.totalAmps.toFixed(2)} A</div><div class="lbl">Total Amps (All LCs)</div></div>
+    <div class="summary-card"><div class="val">${circuit.poleCount}</div><div class="lbl">Light Poles</div></div>
+    <div class="summary-card"><div class="val">${circuit.boxCount}</div><div class="lbl">Junction Boxes</div></div>
+  `;
+  let worstPct = 0;
+  Object.values(circuit.edgeResults).forEach(r => { if (r.cumulativePct > worstPct) worstPct = r.cumulativePct; });
+  const pass = worstPct <= state.vdThreshold;
+  const ampacityIssue = Object.values(circuit.edgeResults).some(r => r.exceedsAmpacity);
+  const continuousDutyIssue = Object.values(circuit.edgeResults).some(r => r.exceedsContinuousDuty);
+  statusLine.innerHTML = `
+    <div style="margin-bottom:6px;">Worst-case cumulative voltage drop (combined, all LCs): <strong style="font-family:'IBM Plex Mono',monospace;">${worstPct.toFixed(2)}%</strong>
+      <span class="status-pill ${pass?'pass':'fail'}">${pass?'PASS':'EXCEEDS LIMIT'}</span></div>
+    ${ampacityIssue ? `<div style="color:#D1483B;font-size:12px;font-weight:600;">⚠ One or more conduit runs exceed the ampacity of the selected wire size.</div>` : ''}
+    ${continuousDutyIssue ? `<div style="color:#E8A33D;font-size:12px;font-weight:600;">⚠ One or more runs are undersized for continuous-load service per NEC 210.19(A), even though current stays under the wire's ampacity.</div>` : ''}
+  `;
+}
+
+function renderWarnings(circuit){
+  const warnings = buildValidationWarnings(circuit);
+  if (warnings.length === 0) { warningsSection.style.display = 'none'; return; }
+  warningsSection.style.display = 'block';
+  const errCount = warnings.filter(w=>w.severity==='ERROR').length, warnCount = warnings.length - errCount;
+  document.getElementById('warningsCount').innerHTML = `<span style="color:var(--red);font-weight:700;">${errCount} error${errCount===1?'':'s'}</span>${warnCount?`, <span style="color:var(--amber);font-weight:700;">${warnCount} warning${warnCount===1?'':'s'}</span>`:''}`;
+  warningsList.innerHTML = warnings.map(w => `<tr>
+      <td><span class="sev ${w.severity==='ERROR'?'error':'warning'}" style="font-weight:700;font-size:9.5px;letter-spacing:.3px;">${w.severity}</span></td>
+      <td>${escapeHtml(w.objectType)}${w.objectId?' ('+escapeHtml(w.objectId)+')':''}</td>
+      <td>${escapeHtml(w.issue)}</td>
+      <td style="color:var(--ink-soft);">${escapeHtml(w.fix)}</td>
+    </tr>`).join('');
+}
+
+function renderSegmentsTable(circuit){
+  if (!circuit || state.edges.length === 0) { segmentsTableWrap.innerHTML = `<div class="empty-hint">No conduit runs yet.</div>`; return; }
+  const inputStyle = 'width:48px;padding:2px 4px;font-family:\'IBM Plex Mono\',monospace;font-size:11px;border:1px solid var(--panel-border);border-radius:3px;background:#fff;';
+  const rows = state.edges.map(e => {
+    const a = state.nodes.find(n=>n.id===e.fromId), b = state.nodes.find(n=>n.id===e.toId);
+    const r = circuit.edgeResults[e.id]; if (!r) return '';
+    const wattsCell = b && b.type === 'pole'
+      ? `<input type="number" class="seg-watts" data-edge="${e.id}" value="${b.watts}" min="0" step="10" style="${inputStyle}">`
+      : `<span style="color:var(--ink-soft);">—</span>`;
+    return `<tr>
+      <td>${escapeHtml(a?.label||'?')} → ${escapeHtml(b?.label||'?')}</td>
+      <td>${escapeHtml(b?.circuit||'')}</td>
+      <td><input type="number" class="seg-len" data-edge="${e.id}" value="${e.lengthFt}" min="1" style="${inputStyle}"></td>
+      <td><select class="seg-wire" data-edge="${e.id}" style="padding:2px 2px;font-family:'IBM Plex Mono',monospace;font-size:11px;border:1px solid var(--panel-border);border-radius:3px;background:#fff;">${WIRE_ORDER.map(w=>`<option value="${w}" ${e.wireSize===w?'selected':''}>${wireLabel(w)}</option>`).join('')}</select></td>
+      <td>${wattsCell}</td>
+      <td>${r.current.toFixed(2)}</td>
+      <td class="${r.exceedsVD?'flag-bad':''}">${r.cumulativePct.toFixed(2)}%</td>
+      <td>${r.exceedsAmpacity ? '<span class="flag-bad">OVER</span>' : (r.exceedsContinuousDuty ? '<span style="color:var(--amber);font-weight:700;">MARGINAL</span>' : '<span class="flag-ok">OK</span>')}</td>
+    </tr>`;
+  }).join('');
+  segmentsTableWrap.innerHTML = `<table class="segments"><thead><tr><th>Run</th><th>Ckt</th><th>Len (ft)</th><th>Wire</th><th>Watts</th><th>A</th><th>Cum %VD</th><th>Amp.</th></tr></thead><tbody>${rows}</tbody></table>`;
+
+  // 'change' (fires on blur/Enter), not 'input' — these edits trigger a full
+  // re-render via flashEdges(), which would rebuild this very table (and
+  // wipe focus) on every keystroke if bound to 'input' instead.
+  segmentsTableWrap.querySelectorAll('.seg-len').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const edge = state.edges.find(x=>x.id===e.target.dataset.edge);
+      if (!edge) return;
+      edge.lengthFt = Math.max(1, Number(e.target.value)||1);
+      flashEdges(new Set([edge.id, ...descendantEdgeIds(edge.toId)]));
+    });
+  });
+  segmentsTableWrap.querySelectorAll('.seg-wire').forEach(sel => {
+    sel.addEventListener('change', e => {
+      const edge = state.edges.find(x=>x.id===e.target.dataset.edge);
+      if (!edge) return;
+      edge.wireSize = e.target.value;
+      flashEdges(new Set([edge.id, ...descendantEdgeIds(edge.toId)]));
+    });
+  });
+  segmentsTableWrap.querySelectorAll('.seg-watts').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const edge = state.edges.find(x=>x.id===e.target.dataset.edge);
+      const node = edge && state.nodes.find(n=>n.id===edge.toId);
+      if (!node) return;
+      node.watts = Number(e.target.value)||0;
+      flashEdges(ancestorEdgeIds(node.id));
+    });
+  });
+}
+
+/* ============================================================
+   AUTO TREE LAYOUT (used on import when no coordinates given)
+   ============================================================ */
+function autoLayoutTree(nodes, edges, startX, gapX, gapY){
+  const childrenOf = {}; nodes.forEach(n => childrenOf[n.id]=[]);
+  edges.forEach(e => { if (childrenOf[e.fromId]) childrenOf[e.fromId].push(e); });
+  const sources = nodes.filter(n=>n.type==='source');
+  const positions = {}; let cursorY = 80;
+  sources.forEach(src => {
+    function assign(nodeId, depth){
+      const kids = childrenOf[nodeId]||[];
+      if (kids.length===0) { const y = cursorY; cursorY += gapY; positions[nodeId] = { x: startX+depth*gapX, y }; return y; }
+      const ys = kids.map(e => assign(e.toId, depth+1));
+      const y = ys.reduce((a,b)=>a+b,0)/ys.length;
+      positions[nodeId] = { x: startX+depth*gapX, y }; return y;
+    }
+    assign(src.id, 0); cursorY += gapY;
+  });
+  return positions;
+}
+
+/* ============================================================
+   EXCEL: SHARED HELPERS
+   ============================================================ */
+function nodeTypeToSheetLabel(t){ return t==='source'?'Load Center':(t==='pole'?'Light Pole':(t==='jbox'?'Junction Box':t)); }
+function sheetLabelToNodeType(s){
+  const v = (s||'').toLowerCase();
+  if (v.includes('load center') || v.includes('lc')) return 'source';
+  if (v.includes('pole')) return 'pole';
+  if (v.includes('splice')) return 'jbox';
+  return 'jbox';
+}
+function guessNodeTypeFromLabel(label){
+  const v = (label||'').toUpperCase();
+  if (v.startsWith('LC')) return 'source';
+  if (v.startsWith('JB') || v.startsWith('PB') || v.startsWith('SP')) return 'jbox';
+  if (v.startsWith('LP') || v.startsWith('P')) return 'pole';
+  return 'jbox';
+}
+
+function buildProjectSettingsSheet(){
+  return XLSX.utils.aoa_to_sheet([
+    ['Setting','Value','Notes'],
+    ['Tool','Circuit Line — Street Lighting Voltage Drop Calculator',''],
+    ['Prepared By','Mayur Patil',''],
+    ['Project Name','Circuit Line Export',''],
+    ['System Voltage', state.systemVoltage, 'Default voltage; individual Load Centers may override'],
+    ['Phase', state.phase===3?'Three-Phase':'Single-Phase', ''],
+    ['Allowable Voltage Drop %', state.vdThreshold, 'Cumulative, Load Center to farthest point'],
+    ['Power Factor', 1.0, 'Per-pole override available in Poles sheet if needed'],
+    ['Default Wire Material','Copper',''],
+    ['Default Wire Size','#8',''],
+    ['Feet Per Pixel', state.scaleFtPerPx, 'Used only if Nodes have no X/Y and Coordinate Mode = StationOffset'],
+    ['Coordinate Mode','XY','XY, StationOffset, or AutoTree'],
+  ]);
+}
+
+function buildNodesSheet(){
+  const header = ['Node ID','Node Type','Label','Circuit','X','Y','Station','Offset','Breaker Amps','Notes'];
+  const rows = state.nodes.map(n => [
+    n.id, nodeTypeToSheetLabel(n.type), n.label, n.circuit||'',
+    Math.round(n.x), Math.round(n.y), '', '',
+    n.type==='source' ? (n.breakerAmps||20) : '', '',
+  ]);
+  return XLSX.utils.aoa_to_sheet([header, ...rows]);
+}
+
+function buildConduitRunsSheet(circuit){
+  const header = ['Run ID','Circuit','From Node ID','To Node ID','Parent Run ID','Length ft','Wire Material','Wire Size','Notes'];
+  const rows = state.edges.map(e => {
+    const toNode = state.nodes.find(n=>n.id===e.toId);
+    const parentEdge = state.edges.find(pe => pe.toId === e.fromId);
+    return [e.id, toNode?toNode.circuit||'':'', e.fromId, e.toId, parentEdge?parentEdge.id:'', e.lengthFt, 'Copper', '#'+e.wireSize, ''];
+  });
+  return XLSX.utils.aoa_to_sheet([header, ...rows]);
+}
+
+function buildPolesSheet(){
+  const header = ['Pole ID','Node ID','Circuit','Watts','Manual Amps','Notes'];
+  const rows = state.nodes.filter(n=>n.type==='pole').map(n => [n.id+'_load', n.id, n.circuit||'', n.watts||0, n.ampsOverride ?? '', '']);
+  return XLSX.utils.aoa_to_sheet([header, ...rows]);
+}
+
+function buildResultsSheet(circuit){
+  const header = ['Circuit(LC)','Run ID','From Node','To Node','Length ft','Wire Size','Downstream Current A','Segment VD V','Segment VD %','Cumulative VD V','Cumulative VD %','Voltage at Downstream Node','Ampacity Limit A','Ampacity Status','Continuous-Duty Status (NEC 210.19(A))','Voltage Drop Status'];
+  if (!circuit) return XLSX.utils.aoa_to_sheet([header]);
+  const rows = state.edges.map(e => {
+    const r = circuit.edgeResults[e.id]; if (!r) return null;
+    const src = state.nodes.find(n=>n.id===r.sourceId);
+    const localV = (src && src.voltageOverride) || state.systemVoltage;
+    return [
+      src?src.label:'', e.id, e.fromId, e.toId, e.lengthFt, '#'+e.wireSize,
+      Number(r.current.toFixed(3)), Number(r.voltageDrop.toFixed(3)), Number(r.pctVD.toFixed(2)),
+      Number(r.cumulativeVD.toFixed(3)), Number(r.cumulativePct.toFixed(2)), Number((localV - r.cumulativeVD).toFixed(2)),
+      WIRE_AMPACITY[e.wireSize], r.exceedsAmpacity?'OVER':'OK', r.exceedsContinuousDuty?'MARGINAL':'OK', r.exceedsVD?'EXCEEDS':'OK',
+    ];
+  }).filter(Boolean);
+  return XLSX.utils.aoa_to_sheet([header, ...rows]);
+}
+
+function buildWarningsSheet(circuit){
+  const header = ['Severity','Object Type','Object ID','Issue','Recommended Fix'];
+  const rows = buildValidationWarnings(circuit).map(w => [w.severity, w.objectType, w.objectId, w.issue, w.fix]);
+  return XLSX.utils.aoa_to_sheet([header, ...rows]);
+}
+
+function buildReadmeSheet(){
+  const lines = [
+    ['Circuit Line — Import Template'],
+    ['Tool by Mayur Patil'],
+    [''],
+    ['How to use this workbook:'],
+    ['1. Fill in Project Settings (system voltage, phase, allowable %VD, feet-per-pixel).'],
+    ['2. List every physical point in Nodes: one row per Load Center, Light Pole, Junction/Pull Box, or Splice.'],
+    ['   - Node ID and Label must be unique.'],
+    ['   - Exactly one Load Center per independent circuit tree (you can have several Load Centers in one file).'],
+    ['   - Fill X and Y if you have a layout in mind; otherwise leave blank and the tool will auto-arrange it.'],
+    ['3. List every conduit segment in Conduit Runs: From Node ID -> To Node ID, with Length (ft) and Wire Size.'],
+    ['   - Conduit Runs are parent -> child. A run\'s "From" must already exist as a Node; current is summed from the'],
+    ['     downstream end back to the Load Center automatically, including at splices (one point feeding multiple runs).'],
+    ['4. List each pole\'s wattage in the Poles sheet, one row per Light Pole Node ID.'],
+    ['5. Import this file with "Import Excel Design". The Expected Results and Validation Warnings sheets are informational'],
+    ['   only — the calculator recomputes everything itself after import so you always see live, correct numbers.'],
+    [''],
+    ['Node ID and Run ID must be unique across the whole workbook.'],
+    ['Circuits always start at a Load Center — a Load Center row can never appear as a "To Node ID" in Conduit Runs.'],
+  ];
+  return XLSX.utils.aoa_to_sheet(lines);
+}
+
+/* ============================================================
+   EXCEL: DOWNLOAD SAMPLE TEMPLATE (demo circuit incl. a splice)
+   ============================================================ */
+document.getElementById('btnDownloadTemplate').addEventListener('click', () => {
+  const demoNodes = [
+    { id:'LC-1', type:'source', x:140, y:180, label:'LC-1', watts:0, ampsOverride:null, pf:1, circuit:'', breakerAmps:20, voltageOverride:null, phaseOverride:null },
+    { id:'PB-1', type:'jbox', x:320, y:180, label:'PB-1', watts:0, ampsOverride:null, pf:1, circuit:'A' },
+    { id:'P-1', type:'pole', x:480, y:150, label:'P-1', watts:150, ampsOverride:null, pf:1, circuit:'A' },
+    { id:'P-2', type:'pole', x:640, y:150, label:'P-2', watts:150, ampsOverride:null, pf:1, circuit:'A' },
+    { id:'SP-1', type:'jbox', x:800, y:180, label:'SP-1', watts:0, ampsOverride:null, pf:1, circuit:'A' },
+    { id:'P-3', type:'pole', x:960, y:120, label:'P-3', watts:150, ampsOverride:null, pf:1, circuit:'A' },
+    { id:'P-4', type:'pole', x:960, y:220, label:'P-4', watts:150, ampsOverride:null, pf:1, circuit:'A' },
+    { id:'P-5', type:'pole', x:1120, y:220, label:'P-5', watts:150, ampsOverride:null, pf:1, circuit:'A' },
+  ];
+  const demoEdges = [
+    { id:'AB-1', fromId:'LC-1', toId:'PB-1', lengthFt:100, wireSize:'8' },
+    { id:'AB-2', fromId:'PB-1', toId:'P-1', lengthFt:120, wireSize:'10' },
+    { id:'AB-3', fromId:'P-1', toId:'P-2', lengthFt:150, wireSize:'10' },
+    { id:'AB-4', fromId:'P-2', toId:'SP-1', lengthFt:100, wireSize:'10' },
+    { id:'AB-5', fromId:'SP-1', toId:'P-3', lengthFt:90, wireSize:'12' },
+    { id:'AB-6', fromId:'SP-1', toId:'P-4', lengthFt:90, wireSize:'12' },
+    { id:'AB-7', fromId:'P-4', toId:'P-5', lengthFt:110, wireSize:'12' },
+  ];
+  const savedNodes = state.nodes, savedEdges = state.edges;
+  state.nodes = demoNodes; state.edges = demoEdges;
+  const circuit = computeAllCircuits();
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, buildReadmeSheet(), 'README');
+  XLSX.utils.book_append_sheet(wb, buildProjectSettingsSheet(), 'Project Settings');
+  XLSX.utils.book_append_sheet(wb, buildNodesSheet(), 'Nodes');
+  XLSX.utils.book_append_sheet(wb, buildConduitRunsSheet(circuit), 'Conduit Runs');
+  XLSX.utils.book_append_sheet(wb, buildPolesSheet(), 'Poles');
+  XLSX.utils.book_append_sheet(wb, buildResultsSheet(circuit), 'Expected Results');
+  XLSX.utils.book_append_sheet(wb, buildWarningsSheet(circuit), 'Validation Warnings');
+  XLSX.writeFile(wb, 'circuit-line-sample-template.xlsx');
+
+  state.nodes = savedNodes; state.edges = savedEdges;
+});
+
+/* ============================================================
+   EXCEL: CIRCUIT ANALYSIS REPORT (firm-standard SR30-style export)
+   Replicates the exact tab layout/formulas of the firm's own Circuit
+   Analysis Excel workbook: one sheet per Load Center, with LIVE
+   formulas (not baked-in values) matching their own conventions —
+   cumulative current/drop chains, tiered Okay/Warning/Error status,
+   and the trunk/branch merge pattern: at any splice point, one branch
+   ("primary") continues its row-chain through the connector row up
+   toward the source, and every sibling branch converging at that same
+   point gets summed into that connector row (current from siblings'
+   LAST row, voltage drop from siblings' FIRST/leaf row — verified
+   against the real workbook's cached values before shipping this).
+   Column E (own load) is populated only when a row's destination is a
+   pole (LP) — left blank for a junction box (JB), which has no load
+   of its own; this is the corrected rule, independent of any stray
+   data-entry mismatches that might exist in a hand-built sheet.
+   ============================================================ */
+
+// Finds every splice point (node with ≥2 children) under a Load Center, in
+// depth order — used to ask the user which child continues the trunk at
+// each one, rather than guessing. Each child is annotated with how many
+// poles are downstream of it, as a hint for the picker UI.
+function findSplicePoints(sourceId){
+  const childrenOf = id => state.edges.filter(e => e.fromId === id);
+  const nodeById = id => state.nodes.find(n => n.id === id);
+  function countPoles(nodeId){
+    const n = nodeById(nodeId);
+    let count = n.type === 'pole' ? 1 : 0;
+    childrenOf(nodeId).forEach(e => { count += countPoles(e.toId); });
+    return count;
+  }
+  const splices = [];
+  function walk(nodeId){
+    const kids = childrenOf(nodeId);
+    if (kids.length >= 2) {
+      splices.push({
+        nodeId, label: nodeById(nodeId).label,
+        children: kids.map(e => ({ edgeId: e.id, childId: e.toId, childLabel: nodeById(e.toId).label, poleCount: countPoles(e.toId) })),
+      });
+    }
+    kids.forEach(e => walk(e.toId));
+  }
+  childrenOf(sourceId).forEach(e => walk(e.toId));
+  return splices;
+}
+
+// Decomposes the tree under a Load Center into row-blocks (one per
+// "Branch" section in the exported sheet). Each block is an ordered
+// array of edges, leaf-most first, connector-row-into-the-source last
+// (if this block is the "primary" continuer at every splice it passes
+// through on the way up). `primaryChoice` maps a splice-point nodeId to
+// the edgeId of the child that should continue the trunk there — any
+// splice point not present in the map falls back to its first child.
+function decomposeBranchesForExport(sourceId, primaryChoice){
+  primaryChoice = primaryChoice || {};
+  const childrenOf = id => state.edges.filter(e => e.fromId === id);
+  const blocks = [];
+  function walk(nodeId){
+    const kids = childrenOf(nodeId);
+    if (kids.length === 0) return [];
+    if (kids.length === 1) { const ce = walk(kids[0].toId); return [...ce, kids[0]]; }
+    const chosenId = primaryChoice[nodeId];
+    if (chosenId === 'NONE'){
+      // No child absorbs this node's chain contiguously — every child becomes
+      // its own separate block, and this node's own row (added by whichever
+      // caller is building the chain into it) simply doesn't extend further.
+      kids.forEach(childEdge => { const sub = walk(childEdge.toId); blocks.push([...sub, childEdge]); });
+      return [];
+    }
+    const primaryEdge = kids.find(k => k.id === chosenId) || kids[0];
+    kids.filter(k => k.id !== primaryEdge.id).forEach(childEdge => { const sub = walk(childEdge.toId); blocks.push([...sub, childEdge]); });
+    const primaryEdges = walk(primaryEdge.toId);
+    return [...primaryEdges, primaryEdge];
+  }
+  childrenOf(sourceId).forEach(childEdge => { const sub = walk(childEdge.toId); blocks.push([...sub, childEdge]); });
+  return blocks;
+}
+
+function buildCircuitAnalysisSheet(sourceId, projectName, primaryChoice, branchNames){
+  const source = state.nodes.find(n => n.id === sourceId);
+  const blocks = decomposeBranchesForExport(sourceId, primaryChoice);
+  if (blocks.length === 0) return null;
+  const nodeById = id => state.nodes.find(n => n.id === id);
+
+  const wsData = {};
+  const setCell = (addr, val) => { wsData[addr] = val; };
+
+  setCell('A1', projectName || source.label);
+  setCell('A2', 'Voltage Drop Analysis - Made by Circuit Line');
+  setCell('I1', 'Date:'); setCell('J1', {f:'NOW()'});
+  setCell('J2', 'Made By:  Mayur Patil');
+  setCell('J3', 'Checked By:  ');
+  setCell('C3', 'Breaker AMPS:'); setCell('D3', source.breakerAmps || 20);
+  setCell('F3', 'Voltage:'); setCell('G3', source.voltageOverride || state.systemVoltage);
+  setCell('C4', 'MAX %:'); setCell('D4', 0.8);
+  setCell('F4', 'MAX %:'); setCell('G4', 0.05); setCell('H4', 0.03); setCell('I4', 0.02);
+  setCell('A5', 'Wire MIN:'); setCell('B5', {f:'VLOOKUP(D3,Tables!$F$4:$G$11,2)'});
+  setCell('C5', 'AMP MAX:'); setCell('D5', {f:'D3*D4'});
+  setCell('F5', 'MAX Drop:'); setCell('G5', {f:'G3*G4'}); setCell('H5', {f:'G3*H4'}); setCell('I5', {f:'G3*I4'});
+  setCell('J6', 'Total');
+  setCell('C7', 'Mounting'); setCell('F7', 'Total'); setCell('H7', 'Wire'); setCell('I7', 'Voltage'); setCell('J7', 'Total');
+  setCell('A8', 'From'); setCell('B8', 'To'); setCell('C8', 'Height'); setCell('D8', 'Distance'); setCell('E8', 'AMP');
+  setCell('F8', 'AMP'); setCell('G8', 'AMP Feet'); setCell('H8', 'Size'); setCell('I8', 'Drop'); setCell('J8', 'Drop');
+
+  let cursorRow = 10;
+  const blockMeta = blocks.map(block => {
+    const headerRow = cursorRow;
+    const firstDataRow = cursorRow + 1;
+    cursorRow = firstDataRow + block.length;
+    const isRootBlock = block[block.length-1].fromId === sourceId;
+    if (isRootBlock) cursorRow += 1; // room for the Amp-max Okay/Error row
+    cursorRow += 2; // gap before next block
+    return { headerRow, firstDataRow, lastDataRow: firstDataRow + block.length - 1, isRootBlock };
+  });
+
+  // Map every merge-point node -> which block(s) terminate there as a
+  // non-continuing sibling. A node M is a merge point whenever some block's
+  // LAST edge has fromId === M (that's exactly how decomposeBranchesForExport
+  // creates sibling blocks). This has to be checked per ROW, not just at
+  // each block's own final row — a "primary" chain can pass through several
+  // splice points in sequence (e.g. JB4 -> JB3 -> JB2, each with its own
+  // siblings merging in), not only at the single connector row closest to
+  // the source.
+  const siblingBlocksByMergeNode = {};
+  blocks.forEach((b, bi) => {
+    const M = b[b.length-1].fromId;
+    (siblingBlocksByMergeNode[M] = siblingBlocksByMergeNode[M] || []).push(bi);
+  });
+
+  blocks.forEach((block, bi) => {
+    const meta = blockMeta[bi];
+    setCell(`A${meta.headerRow}`, (branchNames && branchNames[bi]) || `Branch ${bi+1}`);
+    setCell(`J${meta.headerRow}`, {f:`IF(J${meta.firstDataRow}<=I$5,"Okay",IF(J${meta.firstDataRow}>G$5,"Error: Voltage Drop Exceeds "&TEXT(G$4,"0%"),IF(J${meta.firstDataRow}>H$5,"Warning: Voltage Drop Exceeds "&TEXT(H$4,"0%"),"Voltage Drop Exceeds "&TEXT(I$4,"0%"))))`});
+
+    block.forEach((e, ei) => {
+      const r = meta.firstDataRow + ei;
+      const isLast = ei === block.length - 1;
+      const toNode = nodeById(e.toId), fromNode = nodeById(e.fromId);
+      const prevR = r - 1, nextR = r + 1;
+      // Siblings merging in at THIS specific row (this row's own node, e.toId,
+      // being a splice point) — independent of whether this is the block's
+      // last row.
+      const sibs = siblingBlocksByMergeNode[e.toId] || [];
+
+      setCell(`A${r}`, isLast ? fromNode.label : {f:`B${r+1}`});
+      setCell(`B${r}`, toNode.label);
+      if (ei === 0 && toNode.mountingHeightFt) setCell(`C${r}`, toNode.mountingHeightFt);
+      setCell(`D${r}`, e.lengthFt);
+      // Own load: populated only when the destination is a pole (LP) —
+      // blank for a junction box (JB), which carries no load of its own.
+      if (toNode.type === 'pole') setCell(`E${r}`, {f:`${toNode.watts}/${source.voltageOverride || state.systemVoltage}`});
+
+      // F (cumulative current): same simple pattern as the real workbook —
+      // IF(D(prevRow)="", E, E+F(prevRow)+<sibling F's, if any>). D(prevRow)
+      // is blank exactly when prevRow is a header/gap row, i.e. this is a
+      // block's own first row — so no special-casing is needed for ei===0.
+      const siblingFRefs = sibs.map(si => `F${blockMeta[si].lastDataRow}`);
+      const fFirstRow = [`E${r}`, ...siblingFRefs].join('+');
+      const fContinued = [`E${r}`, `F${prevR}`, ...siblingFRefs].join('+');
+      setCell(`F${r}`, {f:`IF(D${r}="","",IF(D${prevR}="",${fFirstRow},${fContinued}))`});
+
+      setCell(`G${r}`, {f:`IF(D${r}="","",(C${r}+D${r})*F${r})`});
+      setCell(`H${r}`, e.wireSize.startsWith('#') ? e.wireSize : '#'+e.wireSize);
+      setCell(`I${r}`, {f:`IF(D${r}="","",(G${r}*2*(VLOOKUP(H${r},Tables!$A$4:$C$15,3))))`});
+
+      // J (cumulative voltage drop, suffix-accumulated): IF(D(nextRow)="",
+      // just this row's own I + siblings' TOTAL (their first/leaf-row J),
+      // otherwise I + J(nextRow) + siblings' total. Siblings contribute
+      // their *first*-row J (their branch's own full total), verified
+      // against the real workbook's cached values.
+      const siblingJRefs = sibs.map(si => `J${blockMeta[si].firstDataRow}`);
+      const jWithNext = [`I${r}`, `J${nextR}`, ...siblingJRefs].join('+');
+      const jNoNext = [`I${r}`, ...siblingJRefs].join('+');
+      setCell(`J${r}`, {f: isLast ? `IF(D${r}="","",${jNoNext})` : `IF(D${r}="","",IF(D${nextR}="",${jNoNext},${jWithNext}))`});
+    });
+
+    if (meta.isRootBlock){
+      const r = meta.lastDataRow + 1;
+      setCell(`F${r}`, {f:`IF(F${meta.lastDataRow}<=D$5,"Okay",IF(F${meta.lastDataRow}>D$5,"Error: Amperage  Exceeds Maximum"))`});
+    }
+  });
+
+  const ws = {};
+  Object.entries(wsData).forEach(([addr, val]) => {
+    if (val && typeof val === 'object' && 'f' in val) ws[addr] = { t:'n', f: val.f };
+    else if (typeof val === 'number') ws[addr] = { t:'n', v: val };
+    else ws[addr] = { t:'s', v: String(val) };
+  });
+  ws['!ref'] = XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:cursorRow, c:10} });
+  ws['!cols'] = [{wch:9},{wch:9},{wch:10},{wch:9},{wch:8},{wch:8},{wch:10},{wch:7},{wch:9},{wch:9}];
+  return ws;
+}
+
+function buildCircuitTablesSheet(){
+  const t = state.wireTable;
+  const rows = [
+    [null,'OHM/','OHM/','Maximum',null,'Circuit','Minimum',null,null,null,'OHM/','OHM/'],
+    [null,'1000 Feet','Foot','Current',null,'Breaker','Wire',null,null,null,'1000 Feet','Foot'],
+    ['Size',75,75,'(Ampacity)',null,'Size','Size',null,'Size',null,75,75],
+    ['#1',0.16,null,null,null,15,'#14',null,'#1',null,0.15,null],
+    ['#1/0',0.127,null,null,null,20,'#12',null,'#1/0',null,0.12,null],
+    ['#10',t['10'],null,null,null,25,'#8',null,'#10',null,1.2,null],
+    ['#12',t['12'],null,null,null,30,'#8',null,'#12',null,2.0,null],
+    ['#14',3.19,null,null,null,35,'#6',null,'#14',null,3.1,null],
+    ['#2',t['2'],null,null,null,40,'#6',null,'#2',null,0.19,null],
+    ['#2/0',0.101,null,null,null,45,'#4',null,'#2/0',null,0.1,null],
+    ['#3/0',0.0797,null,null,null,50,'#4',null,'#3/0',null,0.077,null],
+    ['#4',t['4'],null,null,null,null,null,null,'#4',null,0.31,null],
+    ['#4/0',0.0626,null,null,null,null,null,null,'#4/0',null,0.062,null],
+    ['#6',t['6'],null,null,null,null,null,null,'#6',null,0.49,null],
+    ['#8',t['8'],null,null,null,null,null,null,'#8',null,0.78,null],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const ampBase = {4:110,5:125,6:30,7:25,8:20,9:95,10:145,11:165,12:70,13:195,14:55,15:40};
+  for (let r=4;r<=15;r++){
+    ws[`C${r}`] = { t:'n', f:`(B${r}/1000)*(1+(0.00323*(C$3-B$3)))` };
+    if (ampBase[r] != null) ws[`D${r}`] = { t:'n', f:`0.8*${ampBase[r]}` };
+    ws[`M${r}`] = { t:'n', f:`(L${r}/1000)*(1+(0.00323*(M$3-L$3)))` };
+  }
+  ws['A16']={t:'s',v:'Use this table for most applications (Copper Wire).'};
+  ws['A17']={t:'s',v:'It is conservative for wire sizes #1 and smaller.'};
+  ws['A18']={t:'s',v:'Based on direct current in coated wires.'};
+  ws['A19']={t:'s',v:'Nearly identical to alternating current resistances.'};
+  ws['A20']={t:'s',v:'Ampacity is for 4 to 6 current carrying conductors. Reduce for more conductors or exposed conduit (higher temperatures).'};
+  ws['K16']={t:'s',v:'Use this table for large wire sizes.'};
+  ws['K17']={t:'s',v:'It is conservative for wire sizes #1 and larger.'};
+  ws['K18']={t:'s',v:'Based on alternating 3 phase current in uncoated wires.'};
+  ws['K19']={t:'s',v:'This assumes a 0.85 power factor, however most HPS lights with'};
+  ws['K20']={t:'s',v:'  magnetic regulator ballast have a PF of 0.90 or higher.'};
+  ws['A22']={t:'s',v:'Bond wire shall be #8 when the largest conductor is #2 or smaller.'};
+  ws['A23']={t:'s',v:'Bond wire shall be #6 when the largest conductor is #1 or #1/0.'};
+  ws['A24']={t:'s',v:'Bond wire shall be #4 when the largest conductor is #2/0 or #3/0.'};
+  ws['A25']={t:'s',v:'Bond wire shall be #2 when the largest conductor is #4/0.'};
+  ws['!ref'] = 'A1:M25';
+  return ws;
+}
+
+// Walks the user through, for one Load Center: (1) choosing which child
+// continues the trunk at every splice point found under it, then (2) naming
+// every resulting branch block. Resolves with { primaryChoice, branchNames }.
+function resolveExportChoicesForSource(source){
+  return new Promise(resolve => {
+    const splices = findSplicePoints(source.id);
+    if (splices.length === 0) {
+      // No splice points at all — nothing to choose, just name the single block (if any).
+      const blocks = decomposeBranchesForExport(source.id, {});
+      if (blocks.length === 0) { resolve(null); return; }
+      askBranchNames(source, {}, blocks, resolve);
+      return;
+    }
+    modalRoot.innerHTML = `
+      <div class="modal-overlay" id="spliceModal">
+        <div class="modal-box" style="width:620px;">
+          <h3>${escapeHtml(source.label)} — trunk routing</h3>
+          <div class="empty-hint" style="margin-bottom:12px;">This Load Center has ${splices.length} point${splices.length===1?'':'s'} where more than one branch converges. For each, pick which branch continues as the main trunk toward the source — the others become their own separate named branches in the report, cross-referenced into the trunk's totals (matching how a multi-branch run is normally organized).</div>
+          ${splices.map((s, si) => `
+            <div class="field-row">
+              <label>At ${escapeHtml(s.label)} — continues via:</label>
+              <select class="splice-pick" data-node="${s.nodeId}">
+                <option value="NONE">— None, keep every branch here fully separate —</option>
+                ${s.children.map(c => `<option value="${c.edgeId}">${escapeHtml(c.childLabel)} (${c.poleCount} pole${c.poleCount===1?'':'s'} downstream)</option>`).join('')}
+              </select>
+            </div>`).join('')}
+          <div class="modal-actions">
+            <button class="btn-secondary" id="splice_cancel">Cancel export</button>
+            <button class="btn-primary" id="splice_go">Next: name branches</button>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('splice_cancel').addEventListener('click', () => { modalRoot.innerHTML = ''; resolve(null); });
+    document.getElementById('splice_go').addEventListener('click', () => {
+      const primaryChoice = {};
+      document.querySelectorAll('.splice-pick').forEach(sel => { primaryChoice[sel.dataset.node] = sel.value; });
+      const blocks = decomposeBranchesForExport(source.id, primaryChoice);
+      askBranchNames(source, primaryChoice, blocks, resolve);
+    });
+  });
+}
+
+function askBranchNames(source, primaryChoice, blocks, resolve){
+  const nodeById = id => state.nodes.find(n => n.id === id);
+  const defaultNames = blocks.map((b, i) => {
+    const isRoot = b[b.length-1].fromId === source.id;
+    return isRoot ? 'Main Trunk' : `Branch ${i+1} (${nodeById(b[0].toId).label})`;
+  });
+  modalRoot.innerHTML = `
+    <div class="modal-overlay" id="nameModal">
+      <div class="modal-box" style="width:560px;">
+        <h3>${escapeHtml(source.label)} — name each branch</h3>
+        <div class="empty-hint" style="margin-bottom:12px;">These labels appear as the section headers in the exported report.</div>
+        ${blocks.map((b, i) => `<div class="field-row"><label>Branch ${i+1} (ends at ${escapeHtml(nodeById(b[0].toId).label)})</label><input type="text" class="branch-name" data-idx="${i}" value="${escapeHtml(defaultNames[i])}"></div>`).join('')}
+        <div class="modal-actions">
+          <button class="btn-secondary" id="name_cancel">Cancel export</button>
+          <button class="btn-primary" id="name_go">Use these names</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('name_cancel').addEventListener('click', () => { modalRoot.innerHTML = ''; resolve(null); });
+  document.getElementById('name_go').addEventListener('click', () => {
+    const branchNames = [];
+    document.querySelectorAll('.branch-name').forEach(inp => { branchNames[Number(inp.dataset.idx)] = inp.value || `Branch ${Number(inp.dataset.idx)+1}`; });
+    modalRoot.innerHTML = '';
+    resolve({ primaryChoice, branchNames });
+  });
+}
+
+document.getElementById('btnExportCircuitAnalysis').addEventListener('click', async () => {
+  const sources = state.nodes.filter(n => n.type === 'source').filter(s => state.edges.some(e => e.fromId === s.id));
+  if (sources.length === 0) { alert('Place at least one Load Center with conduit runs before exporting.'); return; }
+  const projectName = prompt('Project name for this report (e.g. "SR30"):', 'Project');
+  if (projectName === null) return;
+
+  const wb = XLSX.utils.book_new();
+  for (let i = 0; i < sources.length; i++){
+    const src = sources[i];
+    const choices = await resolveExportChoicesForSource(src);
+    if (choices === null) { return; } // user cancelled at some step — abort the whole export
+    const ws = buildCircuitAnalysisSheet(src.id, projectName, choices.primaryChoice, choices.branchNames);
+    if (!ws) continue;
+    const safeName = `${(src.label||'LC'+i).replace(/[\\/?*[\]:]/g,'')}`.slice(0,31);
+    XLSX.utils.book_append_sheet(wb, ws, safeName || `Circuit ${i+1}`);
+  }
+  XLSX.utils.book_append_sheet(wb, buildCircuitTablesSheet(), 'Tables');
+  const stamp = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `${projectName || 'circuit'}-circuit-analysis-${stamp}.xlsx`);
+});
+
+/* ============================================================
+   EXCEL: EXPORT RESULTS ONLY
+   ============================================================ */
+document.getElementById('btnExportResults').addEventListener('click', () => {
+  const circuit = computeAllCircuits();
+  if (!circuit) { alert('Place at least one Load Center and a conduit run before exporting.'); return; }
+  const wb = XLSX.utils.book_new();
+  const summaryRows = [['Circuit Line — Results Summary',''], ['Generated', new Date().toLocaleString()], ['']];
+  circuit.sources.forEach(src => {
+    const s = circuit.perSource[src.id];
+    summaryRows.push([s.label+' — Total Watts', s.totalWatts.toFixed(1)]);
+    summaryRows.push([s.label+' — Total Amps', s.totalAmps.toFixed(3)]);
+    summaryRows.push([s.label+' — Breaker / 80% Max', s.breakerAmps+'A / '+s.maxContinuous.toFixed(1)+'A']);
+    summaryRows.push(['']);
+  });
+  summaryRows.push(['Combined Total Watts', circuit.totalWatts.toFixed(1)]);
+  summaryRows.push(['Combined Total Amps', circuit.totalAmps.toFixed(3)]);
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows); wsSummary['!cols']=[{wch:28},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+  XLSX.utils.book_append_sheet(wb, buildResultsSheet(circuit), 'Conduit Runs');
+  XLSX.utils.book_append_sheet(wb, buildWarningsSheet(circuit), 'Validation Warnings');
+  const stamp = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `circuit-line-results-${stamp}.xlsx`);
+});
+
+/* ============================================================
+   EXCEL: EXPORT DESIGN + RESULTS (round-trip capable)
+   ============================================================ */
+document.getElementById('btnExportDesignResults').addEventListener('click', () => {
+  const circuit = computeAllCircuits();
+  if (!circuit) { alert('Place at least one Load Center and a conduit run before exporting.'); return; }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, buildReadmeSheet(), 'README');
+  XLSX.utils.book_append_sheet(wb, buildProjectSettingsSheet(), 'Project Settings');
+  XLSX.utils.book_append_sheet(wb, buildNodesSheet(), 'Nodes');
+  XLSX.utils.book_append_sheet(wb, buildConduitRunsSheet(circuit), 'Conduit Runs');
+  XLSX.utils.book_append_sheet(wb, buildPolesSheet(), 'Poles');
+  XLSX.utils.book_append_sheet(wb, buildResultsSheet(circuit), 'Expected Results');
+  XLSX.utils.book_append_sheet(wb, buildWarningsSheet(circuit), 'Validation Warnings');
+  const stamp = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `circuit-line-design-results-${stamp}.xlsx`);
+});
+
+/* ============================================================
+   EXCEL: IMPORT  (structured template mode, else mapping assistant)
+   ============================================================ */
+document.getElementById('btnImportExcel').addEventListener('click', () => document.getElementById('importExcelInput').click());
+document.getElementById('importExcelInput').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const wb = XLSX.read(ev.target.result, { type: 'array' });
+      const sheetNamesLower = wb.SheetNames.map(s=>s.toLowerCase());
+      if (sheetNamesLower.includes('nodes') && sheetNamesLower.includes('conduit runs')) {
+        importStructuredTemplate(wb);
+      } else {
+        openMappingAssistant(wb);
+      }
+    } catch(err) { alert('Could not read that Excel file: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+});
+
+function sheetByName(wb, name){
+  const idx = wb.SheetNames.findIndex(s => s.toLowerCase() === name.toLowerCase());
+  return idx === -1 ? null : wb.Sheets[wb.SheetNames[idx]];
+}
+
+function importStructuredTemplate(wb){
+  const settingsSheet = sheetByName(wb, 'Project Settings');
+  const nodesSheet = sheetByName(wb, 'Nodes');
+  const runsSheet = sheetByName(wb, 'Conduit Runs');
+  const polesSheet = sheetByName(wb, 'Poles');
+
+  if (settingsSheet) {
+    const rows = XLSX.utils.sheet_to_json(settingsSheet, { header:1 }).slice(1);
+    rows.forEach(r => {
+      const key = (r[0]||'').toString().trim();
+      const val = r[1];
+      if (key === 'System Voltage' && val) state.systemVoltage = Number(val) || state.systemVoltage;
+      if (key === 'Phase' && val) state.phase = /three/i.test(val) ? 3 : 1;
+      if (key === 'Allowable Voltage Drop %' && val) state.vdThreshold = Number(val) || state.vdThreshold;
+      if (key === 'Feet Per Pixel' && val) state.scaleFtPerPx = Number(val) || state.scaleFtPerPx;
+    });
+  }
+
+  const nodeRows = nodesSheet ? XLSX.utils.sheet_to_json(nodesSheet, { defval:'' }) : [];
+  const polesRows = polesSheet ? XLSX.utils.sheet_to_json(polesSheet, { defval:'' }) : [];
+  const wattsByNodeId = {}, ampsByNodeId = {}, circuitByPoleNode = {};
+  polesRows.forEach(pr => {
+    const nid = (pr['Node ID']||'').toString().trim();
+    if (!nid) return;
+    wattsByNodeId[nid] = Number(pr['Watts']) || 0;
+    if (pr['Manual Amps'] !== '' && pr['Manual Amps'] != null) ampsByNodeId[nid] = Number(pr['Manual Amps']);
+    if (pr['Circuit']) circuitByPoleNode[nid] = pr['Circuit'];
+  });
+
+  const newNodes = nodeRows.map(nr => {
+    const id = (nr['Node ID']||'').toString().trim();
+    const type = sheetLabelToNodeType(nr['Node Type']);
+    const hasXY = nr['X'] !== '' && nr['X'] != null && nr['Y'] !== '' && nr['Y'] != null;
+    return {
+      id, type, label: nr['Label'] || id,
+      x: hasXY ? Number(nr['X']) : null, y: hasXY ? Number(nr['Y']) : null,
+      station: nr['Station'] !== '' ? Number(nr['Station']) : null,
+      offset: nr['Offset'] !== '' ? Number(nr['Offset']) : null,
+      watts: wattsByNodeId[id] || 0,
+      ampsOverride: ampsByNodeId[id] != null ? ampsByNodeId[id] : null,
+      pf: 1, circuit: nr['Circuit'] || circuitByPoleNode[id] || '',
+      breakerAmps: type==='source' ? (Number(nr['Breaker Amps']) || 20) : null,
+      voltageOverride: null, phaseOverride: null,
+    };
+  }).filter(n => n.id);
+
+  const runRows = runsSheet ? XLSX.utils.sheet_to_json(runsSheet, { defval:'' }) : [];
+  const newEdges = runRows.map(rr => ({
+    id: (rr['Run ID']||newId('e')).toString(),
+    fromId: (rr['From Node ID']||'').toString().trim(),
+    toId: (rr['To Node ID']||'').toString().trim(),
+    lengthFt: Number(rr['Length ft']) || 1,
+    wireSize: (rr['Wire Size']||'#8').toString().replace('#',''),
+  })).filter(e => e.fromId && e.toId);
+
+  finalizeImportedModel(newNodes, newEdges);
+}
+
+/* Heuristic mapping-assistant import for non-template workbooks (e.g. legacy
+   From/To/Distance/Wire Size style circuit sheets). User picks the sheet and
+   confirms/edits the column mapping before anything is built. */
+function openMappingAssistant(wb){
+  const sheetOptions = wb.SheetNames.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+  const html = `
+    <div class="modal-overlay" id="mapModal">
+      <div class="modal-box">
+        <h3>Import Assistant</h3>
+        <div class="empty-hint" style="margin-bottom:12px;">This workbook doesn't match the Circuit Line template exactly. Pick the sheet that holds your conduit run list, then confirm which columns mean what — I'll build the circuit from that.</div>
+        <div class="field-row"><label>Sheet</label><select id="map_sheet">${sheetOptions}</select></div>
+        <div id="map_columns"></div>
+        <div class="checkbox-row"><input type="checkbox" id="map_swap"><label for="map_swap">Swap From/To direction (use if rows read "farthest point" → "point closer to source")</label></div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="map_cancel">Cancel</button>
+          <button class="btn-primary" id="map_go">Import</button>
+        </div>
+      </div>
+    </div>`;
+  modalRoot.innerHTML = html;
+  const sheetSelect = document.getElementById('map_sheet');
+  function populateColumns(){
+    const sheet = wb.Sheets[sheetSelect.value];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header:1 });
+    const headerRow = rows.find(r => r.some(c => c !== '' && c != null)) || [];
+    const cols = headerRow.map((c,i) => ({ idx:i, name: (c||'(col '+(i+1)+')').toString() }));
+    const fieldDefs = [
+      ['from','From (closer to source / parent)'],
+      ['to','To (farther from source / new node — load goes here)'],
+      ['length','Length / Distance (ft)'],
+      ['wire','Wire Size'],
+      ['watts','Watts (per new node) — optional if Amps given'],
+      ['amps','Amps (per new node) — optional if Watts given'],
+    ];
+    function guess(fieldKey){
+      const synonyms = {
+        from:['from','origin','start'], to:['to','destination','end'],
+        length:['length','distance','dist'], wire:['wire','size','awg','wire size'],
+        watts:['watts','load','w'], amps:['amp','amps','current'],
+      }[fieldKey] || [fieldKey];
+      const hit = cols.find(c => synonyms.some(s => c.name.toLowerCase().includes(s)));
+      return hit ? hit.idx : '';
+    }
+    document.getElementById('map_columns').innerHTML = fieldDefs.map(([key,label]) => `
+      <div class="field-row"><label>${label}</label>
+        <select id="map_${key}"><option value="">— none —</option>${cols.map(c=>`<option value="${c.idx}" ${String(guess(key))===String(c.idx)?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}</select>
+      </div>`).join('');
+  }
+  sheetSelect.addEventListener('change', populateColumns);
+  populateColumns();
+
+  document.getElementById('map_cancel').addEventListener('click', () => { modalRoot.innerHTML = ''; });
+  document.getElementById('map_go').addEventListener('click', () => {
+    const sheet = wb.Sheets[sheetSelect.value];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header:1 });
+    const headerRowIdx = rows.findIndex(r => r.some(c => c !== '' && c != null));
+    const dataRows = rows.slice(headerRowIdx+1).filter(r => r.some(c => c !== '' && c != null));
+    const get = key => { const v = document.getElementById('map_'+key).value; return v===''?null:Number(v); };
+    const cFrom = get('from'), cTo = get('to'), cLen = get('length'), cWire = get('wire'), cWatts = get('watts'), cAmps = get('amps');
+    const swap = document.getElementById('map_swap').checked;
+    if (cFrom==null || cTo==null || cLen==null) { alert('Please map at least From, To, and Length.'); return; }
+
+    const nodesById = {};
+    function ensureNode(label){
+      if (!label) return null;
+      const id = label.toString().trim();
+      if (!nodesById[id]) nodesById[id] = { id, type: guessNodeTypeFromLabel(id), label:id, x:null, y:null, watts:0, ampsOverride:null, pf:1, circuit:'', breakerAmps: guessNodeTypeFromLabel(id)==='source'?20:null, voltageOverride:null, phaseOverride:null };
+      return nodesById[id];
+    }
+    const newEdges = [];
+    dataRows.forEach((row, i) => {
+      let fromLabel = row[cFrom], toLabel = row[cTo];
+      if (!fromLabel || !toLabel) return;
+      if (swap) { const t = fromLabel; fromLabel = toLabel; toLabel = t; }
+      const fromNode = ensureNode(fromLabel), toNode = ensureNode(toLabel);
+      if (!fromNode || !toNode) return;
+      const wattsVal = cWatts!=null ? Number(row[cWatts])||0 : null;
+      const ampsVal = cAmps!=null ? Number(row[cAmps])||0 : null;
+      // load is attributed to the "To" node — in a chain listing, that's the node newly
+      // introduced at this row (farther from the source than "From")
+      if (toNode.type !== 'source' && !toNode._loadSet) {
+        if (ampsVal != null) toNode.ampsOverride = ampsVal;
+        else if (wattsVal != null) toNode.watts = wattsVal;
+        toNode._loadSet = true;
+      }
+      const wireRaw = cWire!=null ? (row[cWire]||'').toString().replace(/[^0-9]/g,'') : '8';
+      const wireSize = WIRE_ORDER.includes(wireRaw) ? wireRaw : '8';
+      newEdges.push({ id: newId('e'), fromId: fromNode.id, toId: toNode.id, lengthFt: Number(row[cLen])||1, wireSize });
+    });
+    Object.values(nodesById).forEach(n => delete n._loadSet);
+    modalRoot.innerHTML = '';
+    finalizeImportedModel(Object.values(nodesById), newEdges);
+  });
+}
+
+function finalizeImportedModel(newNodes, newEdges){
+  // resolve node placement: use X/Y if present, else Station/Offset, else auto tree layout
+  const hasAnyXY = newNodes.some(n => n.x != null && n.y != null);
+  const hasStationOffset = !hasAnyXY && newNodes.some(n => n.station != null && n.offset != null);
+  if (hasStationOffset) {
+    const stations = newNodes.filter(n=>n.station!=null).map(n=>n.station);
+    const baseStation = Math.min(...stations);
+    newNodes.forEach(n => {
+      if (n.station != null && n.offset != null) {
+        n.x = 150 + (n.station - baseStation) / (state.scaleFtPerPx||0.5);
+        n.y = 400 + n.offset / (state.scaleFtPerPx||0.5);
+      }
+    });
+  }
+  const stillMissing = newNodes.some(n => n.x == null || n.y == null);
+  if (stillMissing) {
+    const positions = autoLayoutTree(newNodes, newEdges, 140, 170, 90);
+    newNodes.forEach(n => { if (n.x == null || n.y == null) { const p = positions[n.id]; if (p) { n.x = p.x; n.y = p.y; } else { n.x = 140; n.y = 140; } } });
+  }
+  state.nodes = newNodes;
+  state.edges = newEdges;
+  selectItem(null, null);
+  render();
+  const circuit = computeAllCircuits();
+  const warnings = buildValidationWarnings(circuit);
+  if (warnings.length) alert(`Import complete with ${warnings.length} validation warning(s) — see the Validation Warnings panel on the right.`);
+}
+
+/* ============================================================
+   AGi32 LUMINAIRE SCHEDULE IMPORT
+   Reads a .txt/.csv exported from an AGi32 Luminaire Schedule
+   (native AGi32 column vocabulary: Label, X, Y, MH, Watts — the
+   same fields AGi32 itself uses for Luminaire Location import/export).
+   If there's no separate Watts column (or the user prefers it),
+   wattage can instead be pulled out of the Label text via a regex
+   pattern — same approach as the PDF report importer, for schedules
+   where wattage is only encoded in the fixture code, e.g.
+   "RFL_165W100LED3K-G2-R3M_20'" -> 165 W.
+   Only creates/updates POLE positions and wattages; never touches
+   conduit runs, since AGi32 has no concept of your electrical circuit.
+   ============================================================ */
+document.getElementById('btnImportAgi32').addEventListener('click', () => document.getElementById('importAgi32Input').click());
+document.getElementById('importAgi32Input').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const rows = parseDelimitedText(ev.target.result);
+      if (rows.length < 2) { alert('No data rows found in that file.'); return; }
+      openAgi32ImportPreview(rows);
+    } catch(err) { alert('Could not read that file: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+function parseDelimitedText(text){
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+  const delimiter = lines[0].includes('\t') ? '\t' : ',';
+  return lines.map(line => line.split(delimiter).map(c => c.trim().replace(/^"|"$/g,'')));
+}
+
+function openAgi32ImportPreview(rows){
+  const header = rows[0].map(h => h.toLowerCase());
+  const find = (...names) => { for (const n of names) { const i = header.indexOf(n); if (i !== -1) return i; } return -1; };
+  const iLabel = find('label','name','pole','id');
+  const iX = find('x');
+  const iY = find('y');
+  const iMH = find('mh','mounting height','height');
+  const iWatts = find('watts','wattage','w');
+  if (iLabel === -1 || iX === -1 || iY === -1) {
+    alert('Could not find Label, X, and Y columns. This importer expects AGi32\'s own Luminaire Schedule column names (Label, X, Y, MH, Watts).');
+    return;
+  }
+  const dataRows = rows.slice(1);
+  const existingByLabel = {};
+  state.nodes.filter(n => n.type === 'pole').forEach(n => { existingByLabel[n.label] = n; });
+  const newCount = dataRows.filter(r => !existingByLabel[r[iLabel]]).length;
+  const updateCount = dataRows.length - newCount;
+
+  modalRoot.innerHTML = `
+    <div class="modal-overlay" id="agiModal">
+      <div class="modal-box" style="width:560px;">
+        <h3>Import AGi32 Luminaire Schedule</h3>
+        <div class="empty-hint" style="margin-bottom:12px;">Found ${dataRows.length} luminaire row(s). ${newCount} new pole${newCount===1?'':'s'} will be created, ${updateCount} existing pole${updateCount===1?'':'s'} (matched by Label) will be repositioned/updated. Conduit runs are never touched — connect new poles yourself with Draw Conduit afterward.</div>
+        <div class="checkbox-row"><input type="checkbox" id="agi_flipy"><label for="agi_flipy">Flip Y-axis (check this if the layout comes in mirrored top-to-bottom)</label></div>
+        <div class="field-row"><label>Feet per pixel (uses your current header setting; adjust if needed)</label><input type="number" id="agi_scale" value="${state.scaleFtPerPx}" step="0.01" min="0.01"></div>
+        <div class="checkbox-row"><input type="checkbox" id="agi_labelwatts" ${iWatts===-1?'checked':''}><label for="agi_labelwatts">Extract wattage from the Label instead${iWatts===-1?' (no Watts column found — recommended on)':' of the Watts column'}</label></div>
+        <div id="agi_labelwatts_block" style="display:${iWatts===-1?'block':'none'};">
+          <div class="field-row"><label>Watts pattern (e.g. "RFL_165W100LED3K-G2-R3M_20'" → 165)</label>
+            <input type="text" id="agi_wattsregex" value="(\\d+(?:\\.\\d+)?)\\s*W">
+          </div>
+          <div class="tool-hint" id="agi_wattspreview" style="padding:2px 0 8px;"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="agi_cancel">Cancel</button>
+          <button class="btn-primary" id="agi_go">Import</button>
+        </div>
+      </div>
+    </div>`;
+
+  const labelWattsChk = document.getElementById('agi_labelwatts');
+  const labelWattsBlock = document.getElementById('agi_labelwatts_block');
+  function updateAgiWattsPreview(){
+    const preview = document.getElementById('agi_wattspreview');
+    let re;
+    try { re = new RegExp(document.getElementById('agi_wattsregex').value, 'i'); }
+    catch(err) { preview.innerHTML = `<span style="color:var(--red);">Invalid pattern: ${escapeHtml(err.message)}</span>`; return; }
+    const sample = dataRows.slice(0,4).map(r => {
+      const label = r[iLabel] || '';
+      const m = re.exec(label);
+      return `${escapeHtml(label)} → ${m ? m[1]+'W' : '<span style="color:var(--red);">no match (150W default)</span>'}`;
+    }).join('<br>');
+    preview.innerHTML = sample || 'No data rows to preview.';
+  }
+  labelWattsChk.addEventListener('change', () => { labelWattsBlock.style.display = labelWattsChk.checked ? 'block' : 'none'; if (labelWattsChk.checked) updateAgiWattsPreview(); });
+  document.getElementById('agi_wattsregex').addEventListener('input', updateAgiWattsPreview);
+  if (labelWattsChk.checked) updateAgiWattsPreview();
+
+  document.getElementById('agi_cancel').addEventListener('click', () => { modalRoot.innerHTML = ''; });
+  document.getElementById('agi_go').addEventListener('click', () => {
+    const flipY = document.getElementById('agi_flipy').checked;
+    const scale = Number(document.getElementById('agi_scale').value) || state.scaleFtPerPx;
+    const useLabelWatts = document.getElementById('agi_labelwatts').checked;
+    let wattsRe = null;
+    if (useLabelWatts) {
+      try { wattsRe = new RegExp(document.getElementById('agi_wattsregex').value, 'i'); }
+      catch(err) { alert('Invalid watts pattern: ' + err.message); return; }
+    }
+    const xs = dataRows.map(r => Number(r[iX])).filter(v => !isNaN(v));
+    const ys = dataRows.map(r => Number(r[iY])).filter(v => !isNaN(v));
+    const baseX = Math.min(...xs), baseY = Math.min(...ys), maxY = Math.max(...ys);
+    let created = 0, updated = 0, wattsDefaulted = [];
+    dataRows.forEach(r => {
+      const label = r[iLabel]; if (!label) return;
+      const rawX = Number(r[iX]), rawY = Number(r[iY]);
+      if (isNaN(rawX) || isNaN(rawY)) return;
+      const canvasX = 150 + (rawX - baseX) / scale;
+      const canvasY = flipY ? 150 + (maxY - rawY) / scale : 150 + (rawY - baseY) / scale;
+      let watts;
+      if (useLabelWatts) {
+        const m = wattsRe.exec(label);
+        watts = m ? Number(m[1]) : (iWatts !== -1 && r[iWatts] !== '' ? Number(r[iWatts]) : null);
+        if (!m) wattsDefaulted.push(label);
+      } else {
+        watts = iWatts !== -1 && r[iWatts] !== '' ? Number(r[iWatts]) : null;
+      }
+      const mh = iMH !== -1 && r[iMH] !== '' ? Number(r[iMH]) : null;
+      let node = existingByLabel[label];
+      if (!node) {
+        node = { id: newId('n'), type:'pole', label, x:canvasX, y:canvasY, watts: watts!=null?watts:150, ampsOverride:null, pf:1, circuit:'', mountingHeightFt: mh };
+        state.nodes.push(node);
+        created++;
+      } else {
+        node.x = canvasX; node.y = canvasY;
+        if (watts != null) node.watts = watts;
+        if (mh != null) node.mountingHeightFt = mh;
+        updated++;
+      }
+    });
+    modalRoot.innerHTML = '';
+    selectItem(null, null);
+    const addedSrc = ensureLoadCenterExists(state.nodes.filter(n=>n.type==='pole'));
+    growCanvasToFit();
+    render();
+    fitViewToContent();
+    const wattsMsg = wattsDefaulted.length
+      ? ` ${wattsDefaulted.length} label(s) didn't match the watts pattern and were defaulted to 150W (or their Watts column value): ${wattsDefaulted.slice(0,6).join(', ')}${wattsDefaulted.length>6?', …':''}.`
+      : '';
+    const lcMsg = addedSrc ? ` No Load Center existed, so "${addedSrc.label}" was placed near the layout — reposition it if needed, then use Auto-Connect Chain or Draw Conduit.` : '';
+    alert(`AGi32 import complete: ${created} pole(s) created, ${updated} pole(s) repositioned/updated.${wattsMsg}${lcMsg} Remember to connect any new poles with Draw Conduit — positions and wattage came from AGi32, but conduit runs are your circuit design and AGi32 has no concept of them.`);
+  });
+}
+
+/* ============================================================
+   AGi32 PDF REPORT IMPORT
+   Reads a PDF export (e.g. the standard AGi32 Luminaire Schedule report,
+   with columns like Luminaire No., Label, X, Y, Z, Orient, Tilt), pulls
+   the text layer via pdf.js, reconstructs rows/columns from character
+   positions, then extracts wattage out of the Label string itself —
+   AGi32 naming convention typically embeds it, e.g.
+   "RFL_165W100LED3K-G2-R3M_20'" -> 165 W.
+   Same scope limit as the CSV importer: only pole position/watts/MH,
+   never conduit runs.
+   ============================================================ */
+document.getElementById('btnImportAgi32Pdf').addEventListener('click', () => document.getElementById('importAgi32PdfInput').click());
+document.getElementById('importAgi32PdfInput').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  if (!window.pdfjsLib) { alert('The PDF reader library did not load — check your internet connection and try again.'); return; }
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try {
+      const rows = await parsePdfTable(ev.target.result, 2.5);
+      if (rows.length === 0) { alert('Could not find any table text in that PDF. It may be a scanned image rather than a text-based report.'); return; }
+      openAgi32PdfMappingModal(rows, ev.target.result);
+    } catch(err) { alert('Could not read that PDF: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+});
+
+// Reconstructs a table from a PDF's text layer: clusters text items into rows by
+// Y position, then splits each row into columns wherever the horizontal gap between
+// two items is large relative to the local font size (a real column break, not just
+// a space within a word/token). gapMultiplier controls how big a gap must be to count
+// as a new column — higher = fewer, wider columns; lower = more, narrower columns.
+async function parsePdfTable(arrayBuffer, gapMultiplier){
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+  const allRows = [];
+  for (let p = 1; p <= pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items
+      .filter(it => it.str && it.str.trim() !== '')
+      .map(it => ({ str: it.str, x: it.transform[4], y: it.transform[5], width: it.width, height: it.height || Math.abs(it.transform[3]) || 8 }));
+    if (items.length === 0) continue;
+
+    // Cluster into rows: sort by Y descending (PDF Y grows upward), group items
+    // whose Y is within half a text-line of the row's first item.
+    items.sort((a,b) => b.y - a.y || a.x - b.x);
+    const rows = [];
+    let current = [items[0]];
+    for (let i=1; i<items.length; i++){
+      const prevY = current[0].y;
+      if (Math.abs(items[i].y - prevY) <= Math.max(2, current[0].height*0.5)) {
+        current.push(items[i]);
+      } else {
+        rows.push(current);
+        current = [items[i]];
+      }
+    }
+    rows.push(current);
+
+    rows.forEach(rowItems => {
+      rowItems.sort((a,b) => a.x - b.x);
+      const cols = [];
+      let colText = rowItems[0].str;
+      for (let i=1; i<rowItems.length; i++){
+        const prev = rowItems[i-1], it = rowItems[i];
+        const gap = it.x - (prev.x + prev.width);
+        const threshold = Math.max(3, prev.height * gapMultiplier * 0.35);
+        if (gap > threshold) { cols.push(colText.trim()); colText = it.str; }
+        else { colText += it.str.startsWith(' ') ? it.str : ' '+it.str; }
+      }
+      cols.push(colText.trim());
+      if (cols.some(c => c !== '')) allRows.push(cols);
+    });
+  }
+  return allRows;
+}
+
+function openAgi32PdfMappingModal(rows, rawArrayBuffer, gapMultiplier){
+  gapMultiplier = gapMultiplier || 2.5;
+  const maxCols = Math.max(...rows.map(r => r.length));
+  const colOpts = (selectedGuess) => {
+    let html = `<option value="">— none —</option>`;
+    for (let i=0;i<maxCols;i++) html += `<option value="${i}" ${selectedGuess===i?'selected':''}>Column ${i+1}</option>`;
+    return html;
+  };
+  // Guess a header row (if any) and likely column assignments from header text.
+  const headerRowIdx = rows.findIndex(r => /label|luminaire|orient|tilt/i.test(r.join(' ')));
+  const headerRow = headerRowIdx !== -1 ? rows[headerRowIdx] : [];
+  const guess = (...names) => {
+    for (const n of names){
+      const i = headerRow.findIndex(c => c.toLowerCase().replace(/[^a-z]/g,'').includes(n));
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
+  const gNo = guess('no','number','fixture');
+  const gLabel = guess('label','type','luminaire');
+  const gX = guess('x');
+  const gY = guess('y');
+  const gZ = guess('z','mh','height');
+  const gOrient = guess('orient');
+  const gTilt = guess('tilt');
+  const skipDefault = headerRowIdx !== -1 ? headerRowIdx+1 : 0;
+
+  const previewRows = rows.slice(0, 12).map((r,ri) => `<tr>${r.map((c,ci)=>`<td style="padding:3px 6px;border-bottom:1px solid var(--paper-dim);white-space:nowrap;${ri<skipDefault?'color:var(--ink-soft);text-decoration:line-through;':''}">${escapeHtml(c)}</td>`).join('')}${'<td></td>'.repeat(maxCols-r.length)}</tr>`).join('');
+  const headerCells = Array.from({length:maxCols}, (_,i)=>`<th style="padding:3px 6px;">Col ${i+1}</th>`).join('');
+
+  modalRoot.innerHTML = `
+    <div class="modal-overlay" id="agiPdfModal">
+      <div class="modal-box" style="width:640px;">
+        <h3>Import AGi32 PDF Report</h3>
+        <div class="empty-hint" style="margin-bottom:10px;">Parsed ${rows.length} row(s) from the PDF's text layer. Struck-through rows below will be skipped as headers/titles — adjust "Skip rows" if that's wrong. Columns are detected from spacing and may not line up perfectly on every row; if they look wrong, try a different Column Sensitivity below and click Re-parse.</div>
+        <div style="max-height:180px;overflow:auto;border:1px solid var(--panel-border);border-radius:4px;margin-bottom:12px;">
+          <table style="width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:11px;">
+            <thead><tr style="background:var(--paper-dim);">${headerCells}</tr></thead>
+            <tbody>${previewRows}</tbody>
+          </table>
+        </div>
+        <div class="field-row-inline">
+          <div class="field-row"><label>Column sensitivity</label>
+            <select id="pdf_sens">
+              <option value="1.5" ${gapMultiplier===1.5?'selected':''}>Tight (more columns)</option>
+              <option value="2.5" ${gapMultiplier===2.5?'selected':''}>Normal</option>
+              <option value="4" ${gapMultiplier===4?'selected':''}>Loose (fewer columns)</option>
+            </select>
+          </div>
+          <div class="field-row" style="display:flex;align-items:flex-end;"><button class="btn-secondary" id="pdf_reparse" type="button" style="width:100%;">Re-parse with this sensitivity</button></div>
+        </div>
+        <div class="field-row"><label>Skip rows before data starts</label><input type="number" id="pdf_skip" value="${skipDefault}" min="0" max="${rows.length}"></div>
+        <div class="field-row-inline">
+          <div class="field-row"><label>Luminaire No. (optional)</label><select id="pdf_no">${colOpts(gNo)}</select></div>
+          <div class="field-row"><label>Label</label><select id="pdf_label">${colOpts(gLabel)}</select></div>
+        </div>
+        <div class="field-row-inline">
+          <div class="field-row"><label>X</label><select id="pdf_x">${colOpts(gX)}</select></div>
+          <div class="field-row"><label>Y</label><select id="pdf_y">${colOpts(gY)}</select></div>
+          <div class="field-row"><label>Z / MH (optional)</label><select id="pdf_z">${colOpts(gZ)}</select></div>
+        </div>
+        <div class="field-row-inline">
+          <div class="field-row"><label>Orient (optional)</label><select id="pdf_orient">${colOpts(gOrient)}</select></div>
+          <div class="field-row"><label>Tilt (optional)</label><select id="pdf_tilt">${colOpts(gTilt)}</select></div>
+        </div>
+        <div class="field-row"><label>Watts pattern (extracted from Label, e.g. "RFL_165W100LED3K-G2-R3M_20'" → 165)</label>
+          <input type="text" id="pdf_wattsregex" value="(\\d+(?:\\.\\d+)?)\\s*W">
+        </div>
+        <div class="tool-hint" id="pdf_wattspreview" style="padding:2px 0 8px;"></div>
+        <div class="checkbox-row"><input type="checkbox" id="pdf_flipy"><label for="pdf_flipy">Flip Y-axis (check this if the layout comes in mirrored top-to-bottom)</label></div>
+        <div class="field-row"><label>Feet per pixel (uses your current header setting; adjust if needed)</label><input type="number" id="pdf_scale" value="${state.scaleFtPerPx}" step="0.01" min="0.01"></div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="pdf_cancel">Cancel</button>
+          <button class="btn-primary" id="pdf_go">Import</button>
+        </div>
+      </div>
+    </div>`;
+
+  function updateWattsPreview(){
+    const labelCol = document.getElementById('pdf_label').value;
+    const skip = Number(document.getElementById('pdf_skip').value) || 0;
+    const preview = document.getElementById('pdf_wattspreview');
+    if (labelCol === '') { preview.textContent = 'Pick a Label column to preview extracted wattage.'; return; }
+    let re;
+    try { re = new RegExp(document.getElementById('pdf_wattsregex').value, 'i'); }
+    catch(err) { preview.innerHTML = `<span style="color:var(--red);">Invalid pattern: ${escapeHtml(err.message)}</span>`; return; }
+    const sample = rows.slice(skip, skip+4).map(r => {
+      const label = r[Number(labelCol)] || '';
+      const m = re.exec(label);
+      return `${escapeHtml(label)} → ${m ? m[1]+'W' : '<span style="color:var(--red);">no match (150W default)</span>'}`;
+    }).join('<br>');
+    preview.innerHTML = sample || 'No data rows to preview.';
+  }
+  ['pdf_label','pdf_wattsregex','pdf_skip'].forEach(id => document.getElementById(id).addEventListener('input', updateWattsPreview));
+  updateWattsPreview();
+
+  document.getElementById('pdf_cancel').addEventListener('click', () => { modalRoot.innerHTML = ''; });
+  document.getElementById('pdf_reparse').addEventListener('click', async () => {
+    const newMult = Number(document.getElementById('pdf_sens').value);
+    const newRows = await parsePdfTable(rawArrayBuffer, newMult);
+    openAgi32PdfMappingModal(newRows, rawArrayBuffer, newMult);
+  });
+  document.getElementById('pdf_go').addEventListener('click', () => {
+    const iLabel = document.getElementById('pdf_label').value, iX = document.getElementById('pdf_x').value, iY = document.getElementById('pdf_y').value;
+    if (iLabel === '' || iX === '' || iY === '') { alert('Please map at least Label, X, and Y.'); return; }
+    const iZ = document.getElementById('pdf_z').value;
+    const skip = Number(document.getElementById('pdf_skip').value) || 0;
+    let wattsRe;
+    try { wattsRe = new RegExp(document.getElementById('pdf_wattsregex').value, 'i'); }
+    catch(err) { alert('Invalid watts pattern: ' + err.message); return; }
+    const flipY = document.getElementById('pdf_flipy').checked;
+    const scale = Number(document.getElementById('pdf_scale').value) || state.scaleFtPerPx;
+
+    const dataRows = rows.slice(skip).filter(r => r[Number(iLabel)] && r[Number(iX)] !== undefined && r[Number(iY)] !== undefined);
+    const parsed = dataRows.map(r => ({
+      label: r[Number(iLabel)],
+      x: Number(r[Number(iX)]),
+      y: Number(r[Number(iY)]),
+      z: iZ !== '' ? Number(r[Number(iZ)]) : null,
+    })).filter(r => !isNaN(r.x) && !isNaN(r.y));
+
+    if (parsed.length === 0) { alert('No valid rows found with numeric X/Y after mapping — check the column selections.'); return; }
+
+    const xs = parsed.map(r=>r.x), ys = parsed.map(r=>r.y);
+    const baseX = Math.min(...xs), baseY = Math.min(...ys), maxY = Math.max(...ys);
+    const existingByLabel = {};
+    state.nodes.filter(n => n.type === 'pole').forEach(n => { existingByLabel[n.label] = n; });
+
+    let created = 0, updated = 0, wattsDefaulted = [];
+    parsed.forEach(r => {
+      const m = wattsRe.exec(r.label);
+      const watts = m ? Number(m[1]) : null;
+      if (watts == null) wattsDefaulted.push(r.label);
+      const canvasX = 150 + (r.x - baseX) / scale;
+      const canvasY = flipY ? 150 + (maxY - r.y) / scale : 150 + (r.y - baseY) / scale;
+      let node = existingByLabel[r.label];
+      if (!node) {
+        node = { id: newId('n'), type:'pole', label:r.label, x:canvasX, y:canvasY, watts: watts!=null?watts:150, ampsOverride:null, pf:1, circuit:'', mountingHeightFt: r.z };
+        state.nodes.push(node);
+        created++;
+      } else {
+        node.x = canvasX; node.y = canvasY;
+        if (watts != null) node.watts = watts;
+        if (r.z != null) node.mountingHeightFt = r.z;
+        updated++;
+      }
+    });
+    modalRoot.innerHTML = '';
+    selectItem(null, null);
+    const addedSrc = ensureLoadCenterExists(state.nodes.filter(n=>n.type==='pole'));
+    growCanvasToFit();
+    render();
+    fitViewToContent();
+    const wattsMsg = wattsDefaulted.length
+      ? ` ${wattsDefaulted.length} label(s) didn't match the watts pattern and were defaulted to 150W: ${wattsDefaulted.slice(0,6).join(', ')}${wattsDefaulted.length>6?', …':''}.`
+      : ' Wattage was extracted from every label.';
+    const lcMsg = addedSrc ? ` No Load Center existed, so "${addedSrc.label}" was placed near the layout — reposition it if needed, then use Auto-Connect Chain or Draw Conduit.` : '';
+    alert(`AGi32 PDF import complete: ${created} pole(s) created, ${updated} repositioned/updated.${wattsMsg}${lcMsg} Remember to connect new poles with Draw Conduit — conduit runs are never part of an AGi32 export.`);
+  });
+}
+
+/* ============================================================
+   AGi32 DXF LAYOUT IMPORT
+   Parses INSERT entities straight out of the DXF ENTITIES section —
+   no PDF-style column guessing needed, since a DXF is a real
+   structured tag/value CAD format. Each luminaire INSERT carries its
+   position (10/20/30 = X/Y/Z), rotation (50), and — per AGi32's own
+   export convention — the fixture label/wattage baked into the block
+   name itself (group code 2), e.g.
+   "...LUMINAIRE-RFL-165W100LED3K-G2-R3M_20'_351" -> 165W.
+   Z (group 30) is used directly as Mounting Height; no separate MH
+   column exists or is needed. Never touches conduit runs — DXFs
+   exported from AGi32 itself never carry circuit/conduit geometry,
+   since AGi32 has no concept of your electrical design.
+   ============================================================ */
+document.getElementById('btnImportAgi32Dxf').addEventListener('click', () => document.getElementById('importAgi32DxfInput').click());
+document.getElementById('importAgi32DxfInput').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const text = ev.target.result;
+      if (text.charCodeAt(0) === 0 || /[\x00-\x08]/.test(text.slice(0,200))) {
+        alert('This looks like a binary DXF, which this importer can\'t read. Re-export as ASCII DXF (the default in most CAD/lighting software) and try again.');
+        return;
+      }
+      const inserts = parseDxfInserts(text);
+      if (inserts.length === 0) { alert('No INSERT entities found in that DXF — nothing to import.'); return; }
+      openAgi32DxfLayerPicker(inserts);
+    } catch(err) { alert('Could not read that DXF: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// Minimal DXF reader scoped to exactly what we need: INSERT entities in the
+// ENTITIES section. DXF is a flat sequence of (group code, value) line pairs —
+// no need for a full CAD parser or the BLOCKS section, since block geometry
+// itself is irrelevant here; only the block *name*, insertion point, and
+// rotation of each INSERT matter.
+function parseDxfInserts(text){
+  const lines = text.split(/\r\n|\r|\n/);
+  const inserts = [];
+  let inEntities = false;
+  let cur = null;
+  for (let i=0; i+1<lines.length; i+=2){
+    const code = lines[i].trim();
+    const val = lines[i+1];
+    if (code === '2' && val.trim() === 'ENTITIES') { inEntities = true; continue; }
+    if (code === '0' && val.trim() === 'ENDSEC') { if (inEntities && cur) { inserts.push(cur); cur = null; } inEntities = false; continue; }
+    if (!inEntities) continue;
+    if (code === '0'){
+      if (cur) inserts.push(cur);
+      cur = (val.trim() === 'INSERT') ? { layer:'', block:'', x:null, y:null, z:0, rotation:0 } : null;
+      continue;
+    }
+    if (!cur) continue;
+    switch(code){
+      case '8': cur.layer = val.trim(); break;
+      case '2': cur.block = val.trim(); break;
+      case '10': cur.x = parseFloat(val); break;
+      case '20': cur.y = parseFloat(val); break;
+      case '30': cur.z = parseFloat(val) || 0; break;
+      case '50': cur.rotation = parseFloat(val) || 0; break;
+    }
+  }
+  if (cur) inserts.push(cur);
+  return inserts.filter(r => r.x != null && r.y != null);
+}
+
+function openAgi32DxfLayerPicker(inserts){
+  const byLayer = {};
+  inserts.forEach(r => { (byLayer[r.layer] = byLayer[r.layer]||[]).push(r); });
+  const layers = Object.keys(byLayer).sort((a,b)=>byLayer[b].length-byLayer[a].length);
+  const guessIdx = layers.findIndex(l => /lum|pole|fixture/i.test(l));
+  const options = layers.map((l,i) => `<option value="${escapeHtml(l)}" ${i===(guessIdx===-1?0:guessIdx)?'selected':''}>${escapeHtml(l)} (${byLayer[l].length} inserts)</option>`).join('');
+
+  modalRoot.innerHTML = `
+    <div class="modal-overlay" id="dxfLayerModal">
+      <div class="modal-box">
+        <h3>Import AGi32 DXF Layout</h3>
+        <div class="empty-hint" style="margin-bottom:12px;">Found ${inserts.length} INSERT entities across ${layers.length} layer(s). Pick the layer that holds your luminaires/poles — AGi32 typically names it something like "...-LUMINAIRE".</div>
+        <div class="field-row"><label>Luminaire layer</label><select id="dxf_layer">${options}</select></div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="dxf_layer_cancel">Cancel</button>
+          <button class="btn-primary" id="dxf_layer_go">Next</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('dxf_layer_cancel').addEventListener('click', () => { modalRoot.innerHTML = ''; });
+  document.getElementById('dxf_layer_go').addEventListener('click', () => {
+    const layer = document.getElementById('dxf_layer').value;
+    openAgi32DxfWattsModal(byLayer[layer]);
+  });
+}
+
+function openAgi32DxfWattsModal(records){
+  modalRoot.innerHTML = `
+    <div class="modal-overlay" id="dxfWattsModal">
+      <div class="modal-box" style="width:600px;">
+        <h3>Import AGi32 DXF Layout</h3>
+        <div class="empty-hint" style="margin-bottom:10px;">${records.length} luminaire insert(s) on this layer. Position, mounting height (from the insert's Z), and orientation (from rotation) come straight from the DXF — only wattage needs a pattern, since it's embedded in the block name.</div>
+        <div class="field-row"><label>Watts pattern (e.g. "...RFL-165W100LED3K-G2-R3M_20'_351" → 165)</label>
+          <input type="text" id="dxf_wattsregex" value="(\\d+(?:\\.\\d+)?)\\s*W">
+        </div>
+        <div class="tool-hint" id="dxf_wattspreview" style="padding:2px 0 8px;"></div>
+        <div class="checkbox-row"><input type="checkbox" id="dxf_flipy"><label for="dxf_flipy">Flip Y-axis (check this if the layout comes in mirrored top-to-bottom)</label></div>
+        <div class="field-row"><label>Feet per pixel (uses your current header setting; adjust if needed)</label><input type="number" id="dxf_scale" value="${state.scaleFtPerPx}" step="0.01" min="0.01"></div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="dxf_watts_back">Back</button>
+          <button class="btn-primary" id="dxf_watts_go">Next</button>
+        </div>
+      </div>
+    </div>`;
+
+  function familyOf(name){ return name.replace(/_\d+$/, ''); }
+  function updatePreview(){
+    const preview = document.getElementById('dxf_wattspreview');
+    let re;
+    try { re = new RegExp(document.getElementById('dxf_wattsregex').value, 'i'); }
+    catch(err) { preview.innerHTML = `<span style="color:var(--red);">Invalid pattern: ${escapeHtml(err.message)}</span>`; return; }
+    const unmatchedFamilies = new Set();
+    let matchedCount = 0;
+    records.forEach(r => { if (re.test(r.block)) matchedCount++; else unmatchedFamilies.add(familyOf(r.block)); });
+    let html = `${matchedCount} of ${records.length} matched.`;
+    if (unmatchedFamilies.size){
+      html += ` ${records.length-matchedCount} unmatched across ${unmatchedFamilies.size} fixture type(s) — you'll be asked for wattage on the next screen: <br>` +
+        Array.from(unmatchedFamilies).slice(0,5).map(f=>escapeHtml(f)).join('<br>') + (unmatchedFamilies.size>5?'<br>…':'');
+    }
+    preview.innerHTML = html;
+  }
+  document.getElementById('dxf_wattsregex').addEventListener('input', updatePreview);
+  updatePreview();
+
+  document.getElementById('dxf_watts_back').addEventListener('click', () => openAgi32DxfLayerPicker(records));
+  document.getElementById('dxf_watts_go').addEventListener('click', () => {
+    let re;
+    try { re = new RegExp(document.getElementById('dxf_wattsregex').value, 'i'); }
+    catch(err) { alert('Invalid watts pattern: ' + err.message); return; }
+    const flipY = document.getElementById('dxf_flipy').checked;
+    const scale = Number(document.getElementById('dxf_scale').value) || state.scaleFtPerPx;
+
+    const unmatchedFamilies = {};
+    records.forEach(r => { if (!re.test(r.block)) { const f = familyOf(r.block); (unmatchedFamilies[f] = unmatchedFamilies[f]||[]).push(r); } });
+    const familyNames = Object.keys(unmatchedFamilies);
+
+    if (familyNames.length === 0) { finishDxfImport(records, re, {}, flipY, scale); return; }
+    openAgi32DxfUnmatchedWattsModal(records, re, familyNames, unmatchedFamilies, flipY, scale);
+  });
+}
+
+// One prompt per distinct unmatched fixture "family" (block name with the
+// trailing per-instance _NNN suffix stripped) rather than per individual
+// pole — a repeated catalog fixture only needs its wattage typed once.
+function openAgi32DxfUnmatchedWattsModal(records, re, familyNames, unmatchedFamilies, flipY, scale){
+  const rowsHtml = familyNames.map((f,i) => `
+    <div class="field-row">
+      <label>${escapeHtml(f)} <span style="color:var(--ink-soft);font-weight:400;">(${unmatchedFamilies[f].length} pole${unmatchedFamilies[f].length===1?'':'s'})</span></label>
+      <input type="number" class="dxf-fam-watts" data-fam="${i}" min="0" step="1" placeholder="Watts">
+    </div>`).join('');
+  modalRoot.innerHTML = `
+    <div class="modal-overlay" id="dxfUnmatchedModal">
+      <div class="modal-box" style="width:600px;">
+        <h3>Wattage for unrecognized fixtures</h3>
+        <div class="empty-hint" style="margin-bottom:10px;">These block names don't have a wattage the pattern can find — enter it once per fixture type below; it'll be applied to every pole using that fixture.</div>
+        ${rowsHtml}
+        <div class="modal-actions">
+          <button class="btn-secondary" id="dxf_unmatched_cancel">Cancel</button>
+          <button class="btn-primary" id="dxf_unmatched_go">Import</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('dxf_unmatched_cancel').addEventListener('click', () => { modalRoot.innerHTML = ''; });
+  document.getElementById('dxf_unmatched_go').addEventListener('click', () => {
+    const familyWatts = {};
+    let missing = [];
+    document.querySelectorAll('.dxf-fam-watts').forEach(inp => {
+      const fam = familyNames[Number(inp.dataset.fam)];
+      const v = inp.value === '' ? null : Number(inp.value);
+      if (v == null || isNaN(v)) missing.push(fam); else familyWatts[fam] = v;
+    });
+    if (missing.length){ alert(`Please enter a wattage for: ${missing.join(', ')}`); return; }
+    finishDxfImport(records, re, familyWatts, flipY, scale);
+  });
+}
+
+function finishDxfImport(records, re, familyWatts, flipY, scale){
+  function familyOf(name){ return name.replace(/_\d+$/, ''); }
+  const xs = records.map(r=>r.x), ys = records.map(r=>r.y);
+  const baseX = Math.min(...xs), baseY = Math.min(...ys), maxY = Math.max(...ys);
+  const existingByLabel = {};
+  state.nodes.filter(n => n.type === 'pole').forEach(n => { existingByLabel[n.label] = n; });
+
+  let created = 0, updated = 0;
+  records.forEach((r, idx) => {
+    const m = re.exec(r.block);
+    const watts = m ? Number(m[1]) : (familyWatts[familyOf(r.block)] ?? 150);
+    const label = r.block || ('DXF Pole ' + (idx+1));
+    const canvasX = 150 + (r.x - baseX) / scale;
+    const canvasY = flipY ? 150 + (maxY - r.y) / scale : 150 + (r.y - baseY) / scale;
+    let node = existingByLabel[label];
+    if (!node) {
+      node = { id: newId('n'), type:'pole', label, x:canvasX, y:canvasY, watts, ampsOverride:null, pf:1, circuit:'', mountingHeightFt: r.z || null, orientDeg: r.rotation };
+      state.nodes.push(node);
+      created++;
+    } else {
+      node.x = canvasX; node.y = canvasY; node.watts = watts;
+      if (r.z) node.mountingHeightFt = r.z;
+      node.orientDeg = r.rotation;
+      updated++;
+    }
+  });
+  modalRoot.innerHTML = '';
+  selectItem(null, null);
+  const addedSrc = ensureLoadCenterExists(state.nodes.filter(n=>n.type==='pole'));
+  growCanvasToFit();
+  render();
+  fitViewToContent();
+  const lcMsg = addedSrc ? ` No Load Center existed, so "${addedSrc.label}" was placed near the layout — reposition it if needed, then use Auto-Connect Chain or Draw Conduit.` : '';
+  alert(`AGi32 DXF import complete: ${created} pole(s) created, ${updated} repositioned/updated. Position, mounting height, and orientation came straight from the DXF.${lcMsg} Remember to connect new poles with Draw Conduit — this DXF export doesn't carry circuit/conduit geometry.`);
+}
+
+/* ============================================================
+   SAVE / LOAD (native JSON, unrelated to Excel round-trip)
+   ============================================================ */
+document.getElementById('btnClear').addEventListener('click', () => {
+  if (!confirm('Clear the entire layout? This cannot be undone.')) return;
+  state.nodes = []; state.edges = []; selectItem(null,null); render();
+});
+// Pure validation/normalization for a loaded layout — no DOM access, no
+// alerts — so it can be exercised directly by the self-test suite as well
+// as by the real Load Layout handler.
+function validateLayoutData(data){
+  if (typeof data !== 'object' || data === null || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+    return { error: 'missing-nodes-or-edges' };
+  }
+  const notes = [];
+  if (data.tool && data.tool !== 'Circuit Line') notes.push(`This file identifies itself as "${data.tool}", not "Circuit Line" — loading it anyway since the structure looks compatible, but double-check the result.`);
+  if (data.schemaVersion == null) notes.push(`No version tag found (likely saved by an older copy of this tool) — loading with best-effort defaults for anything missing.`);
+  else if (data.schemaVersion > SCHEMA_VERSION) notes.push(`This file was saved by a newer version of Circuit Line (schema v${data.schemaVersion}, this tool reads v${SCHEMA_VERSION}) — some newer fields may not carry over correctly.`);
+  else if (data.schemaVersion < SCHEMA_VERSION) notes.push(`This file was saved by an older version of Circuit Line (schema v${data.schemaVersion}) — loading normally, missing newer fields will just use defaults.`);
+
+  const validNodes = [], skippedNodes = [];
+  data.nodes.forEach((n,i) => {
+    if (!n || typeof n !== 'object' || !n.id || !['source','pole','jbox'].includes(n.type) || typeof n.x !== 'number' || typeof n.y !== 'number') {
+      skippedNodes.push(n && n.id ? n.id : `row ${i+1}`);
+    } else validNodes.push(n);
+  });
+  const validNodeIds = new Set(validNodes.map(n=>n.id));
+  const validEdges = [], skippedEdges = [];
+  data.edges.forEach((edge,i) => {
+    if (!edge || typeof edge !== 'object' || !edge.id || !validNodeIds.has(edge.fromId) || !validNodeIds.has(edge.toId)) {
+      skippedEdges.push(edge && edge.id ? edge.id : `row ${i+1}`);
+    } else validEdges.push(edge);
+  });
+  if (skippedNodes.length) notes.push(`Skipped ${skippedNodes.length} malformed node(s): ${skippedNodes.slice(0,8).join(', ')}${skippedNodes.length>8?', …':''}.`);
+  if (skippedEdges.length) notes.push(`Skipped ${skippedEdges.length} edge(s) referencing a missing/invalid node: ${skippedEdges.slice(0,8).join(', ')}${skippedEdges.length>8?', …':''}.`);
+
+  return {
+    validNodes, validEdges, notes,
+    systemVoltage: typeof data.systemVoltage === 'number' ? data.systemVoltage : 240,
+    phase: data.phase === 3 ? 3 : 1,
+    vdThreshold: typeof data.vdThreshold === 'number' ? data.vdThreshold : 5,
+    scaleFtPerPx: typeof data.scaleFtPerPx === 'number' ? data.scaleFtPerPx : 0.5,
+    wireTable: (data.wireTable && typeof data.wireTable === 'object') ? data.wireTable : JSON.parse(JSON.stringify(WIRE_DEFAULT_OHMS)),
+  };
+}
+
+document.getElementById('btnSaveJson').addEventListener('click', () => {
+  const dataStr = JSON.stringify({ tool: 'Circuit Line', schemaVersion: SCHEMA_VERSION, preparedBy: 'Mayur Patil', savedAt: new Date().toISOString(), systemVoltage: state.systemVoltage, phase: state.phase, vdThreshold: state.vdThreshold, scaleFtPerPx: state.scaleFtPerPx, wireTable: state.wireTable, nodes: state.nodes, edges: state.edges }, null, 2);
+  const blob = new Blob([dataStr], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'circuit-layout.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('btnLoadJson').addEventListener('click', () => document.getElementById('loadJsonInput').click());
+document.getElementById('loadJsonInput').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    let data;
+    try { data = JSON.parse(ev.target.result); }
+    catch(err) { alert(`"${file.name}" isn't valid JSON, so it can't be read at all (${err.message}). If this came from something other than Circuit Line's own "Save Layout" button, it isn't the right kind of file.`); return; }
+
+    const result = validateLayoutData(data);
+    if (result.error === 'missing-nodes-or-edges') {
+      alert(`"${file.name}" doesn't look like a Circuit Line layout file — it's missing the "nodes" and/or "edges" list every saved layout has. Use the file you got from this tool's own "Save Layout" button.`);
+      return;
+    }
+    if (result.validNodes.length === 0) { alert(`"${file.name}" parsed, but contained no valid nodes — nothing to load.`); return; }
+
+    state.systemVoltage = result.systemVoltage;
+    state.phase = result.phase;
+    state.vdThreshold = result.vdThreshold;
+    state.scaleFtPerPx = result.scaleFtPerPx;
+    state.wireTable = result.wireTable;
+    state.nodes = result.validNodes; state.edges = result.validEdges;
+    document.getElementById('sysVoltage').value = state.systemVoltage;
+    document.getElementById('sysPhase').value = state.phase;
+    document.getElementById('vdThreshold').value = state.vdThreshold;
+    document.getElementById('scaleFtPerPx').value = state.scaleFtPerPx;
+    renderWireTableEditor();
+    selectItem(null,null);
+    growCanvasToFit();
+    render();
+    fitViewToContent();
+    if (result.notes.length) alert(`Loaded "${file.name}" with ${result.validNodes.length} node(s), ${result.validEdges.length} edge(s).\n\n` + result.notes.join('\n'));
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* ============================================================
+   INITIAL DEMO LAYOUT
+   ============================================================ */
+function seedDemo(){
+  const src = { id:newId('n'), type:'source', x:140, y:180, label:'Load Center A', watts:0, ampsOverride:null, pf:1, circuit:'', breakerAmps:20, voltageOverride:null, phaseOverride:null };
+  const p1 = { id:newId('n'), type:'pole', x:340, y:150, label:'Pole 1', watts:150, ampsOverride:null, pf:1, circuit:'A' };
+  const p2 = { id:newId('n'), type:'pole', x:540, y:170, label:'Pole 2', watts:150, ampsOverride:null, pf:1, circuit:'A' };
+  const jb = { id:newId('n'), type:'jbox', x:740, y:200, label:'JB 1', watts:0, ampsOverride:null, pf:1, circuit:'A' };
+  const p3 = { id:newId('n'), type:'pole', x:920, y:130, label:'Pole 3', watts:150, ampsOverride:null, pf:1, circuit:'A' };
+  const p4 = { id:newId('n'), type:'pole', x:920, y:280, label:'Pole 4', watts:150, ampsOverride:null, pf:1, circuit:'A' };
+  state.nodes = [src,p1,p2,jb,p3,p4];
+  state.edges = [
+    { id:newId('e'), fromId:src.id, toId:p1.id, lengthFt:100, wireSize:'8' },
+    { id:newId('e'), fromId:p1.id, toId:p2.id, lengthFt:150, wireSize:'10' },
+    { id:newId('e'), fromId:p2.id, toId:jb.id, lengthFt:120, wireSize:'10' },
+    { id:newId('e'), fromId:jb.id, toId:p3.id, lengthFt:90, wireSize:'12' },
+    { id:newId('e'), fromId:jb.id, toId:p4.id, lengthFt:90, wireSize:'12' },
+  ];
+}
+seedDemo();
+render();
+</script>
+</body>
+</html>
