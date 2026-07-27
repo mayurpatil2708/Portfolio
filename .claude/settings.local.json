@@ -21,7 +21,10 @@
       "mcp__visualize__read_me",
       "mcp__visualize__show_widget",
       "Skill(artifact-design)",
-      "Skill(artifact-design:*)"
+      "Skill(artifact-design:*)",
+      "PowerShell(Stop-Process -Id 172156 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(\"done\")",
+      "Bash(git add *)"
     ]
   }
 }
