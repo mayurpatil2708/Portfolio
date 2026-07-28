@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import GameMode from "@/components/GameMode";
+import GameWidget from "@/components/game/GameWidget";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -118,7 +118,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Header />
-        <GameMode />
+        <GameWidget />
         {children}
         <Footer />
       </body>

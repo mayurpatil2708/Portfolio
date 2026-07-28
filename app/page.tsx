@@ -20,20 +20,19 @@ export default function Home() {
           <div className="intro">
             <h2>Hey there!</h2>
             <p>
-              I&apos;m Mayur — a Traffic Systems Design Engineer at WSP, focused on
-              signal design, intelligent transportation systems (ITS), and
-              street lighting circuit engineering. I like taking a corridor
-              from a concept plan to a fully detailed, field-ready design —
-              signal timing, conduit runs, wire sizing, and everything in
-              between.
+              I&apos;m Mayur, a Traffic and Transportation Engineer focused on
+              making roads safer, smarter, and easier to navigate. I enjoy
+              turning traffic data into real solutions, improving how
+              intersections work, and figuring out what actually makes a
+              street function better for the people using it.
             </p>
             <p>
-              Most of my day-to-day work involves signal plan development,
-              circuit and voltage drop analysis, and coordinating with
-              utilities, jurisdictions, and construction teams to make sure
-              designs hold up once they leave the drawing board. I also build
-              my own tools when the ones available don&apos;t quite fit the job —
-              that&apos;s how Circuit Line came to be.
+              Originally from India and now building my career in the U.S.,
+              I bring an adaptable perspective shaped by working across
+              different environments, standards, and challenges. I approach
+              every project with curiosity, precision, and a focus on
+              solutions that hold up in the real world and not just on
+              paper.
             </p>
           </div>
           <Portrait className="mobile-image" />
@@ -43,17 +42,17 @@ export default function Home() {
         <div className="intro-section">
           <div className="intro">
             <p>
-              I care about designs that actually work in the field, not just
-              on paper — that means thinking through constructability, code
-              compliance, and long-term maintenance from the start, not as an
-              afterthought.
+              Most of my work revolves around traffic signal design, roadway
+              lighting, signing and pavement markings, and Intelligent
+              Transportation Systems. I&apos;m comfortable running photometric
+              analysis, building signal and striping plans in Open Roads
+              Designer and MicroStation, and designing ITS infrastructure
+              including fiber networks, CCTV, DMS, and detection systems.
             </p>
             <p>
-              Outside of work, I like digging into the technical edge cases
-              other people skip over, which is usually where side projects
-              like Circuit Line come from. Always happy to talk shop about
-              signal design, ITS, or anything electrical on the traffic side —
-              let&apos;s connect!
+              Outside of engineering, you&apos;ll find me exploring new places,
+              staying active, and always looking for the next thing to
+              learn. Let&apos;s connect!
             </p>
           </div>
         </div>
@@ -63,33 +62,32 @@ export default function Home() {
           <div className="intro">
             <h2>Hey there!</h2>
             <p>
-              I&apos;m Mayur — a Traffic Systems Design Engineer at WSP, focused on
-              signal design, intelligent transportation systems (ITS), and
-              street lighting circuit engineering. I like taking a corridor
-              from a concept plan to a fully detailed, field-ready design —
-              signal timing, conduit runs, wire sizing, and everything in
-              between.
+              I&apos;m Mayur, a Traffic and Transportation Engineer focused on
+              making roads safer, smarter, and easier to navigate. I enjoy
+              turning traffic data into real solutions, improving how
+              intersections work, and figuring out what actually makes a
+              street function better for the people using it.
             </p>
             <p>
-              Most of my day-to-day work involves signal plan development,
-              circuit and voltage drop analysis, and coordinating with
-              utilities, jurisdictions, and construction teams to make sure
-              designs hold up once they leave the drawing board. I also build
-              my own tools when the ones available don&apos;t quite fit the job —
-              that&apos;s how Circuit Line came to be.
+              Originally from India and now building my career in the U.S.,
+              I bring an adaptable perspective shaped by working across
+              different environments, standards, and challenges. I approach
+              every project with curiosity, precision, and a focus on
+              solutions that hold up in the real world and not just on
+              paper.
             </p>
             <p>
-              I care about designs that actually work in the field, not just
-              on paper — that means thinking through constructability, code
-              compliance, and long-term maintenance from the start, not as an
-              afterthought.
+              Most of my work revolves around traffic signal design, roadway
+              lighting, signing and pavement markings, and Intelligent
+              Transportation Systems. I&apos;m comfortable running photometric
+              analysis, building signal and striping plans in Open Roads
+              Designer and MicroStation, and designing ITS infrastructure
+              including fiber networks, CCTV, DMS, and detection systems.
             </p>
             <p>
-              Outside of work, I like digging into the technical edge cases
-              other people skip over, which is usually where side projects
-              like Circuit Line come from. Always happy to talk shop about
-              signal design, ITS, or anything electrical on the traffic
-              side — let&apos;s connect!
+              Outside of engineering, you&apos;ll find me exploring new places,
+              staying active, and always looking for the next thing to
+              learn. Let&apos;s connect!
             </p>
           </div>
           <Portrait />

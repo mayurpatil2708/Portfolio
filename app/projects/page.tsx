@@ -156,7 +156,7 @@ export default function Projects() {
     <main>
       <Hero
         title="Projects"
-        subtitle="Transportation and ITS design work delivered at WSP and AECOM — plus the tools I've built along the way."
+        subtitle="Transportation and ITS design work across signal, lighting, and corridor projects — plus the tools I've built along the way."
       />
       <section className="page-section">
         {experience.map((job) => (
@@ -164,7 +164,7 @@ export default function Projects() {
             <div className="experience-header">
               <h2>{job.role}</h2>
               <p>
-                {job.company} · {job.location} · {job.period}
+                {job.location} · {job.period}
               </p>
             </div>
             <div className="projects-grid">

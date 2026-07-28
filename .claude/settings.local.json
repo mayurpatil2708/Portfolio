@@ -24,7 +24,13 @@
       "Skill(artifact-design:*)",
       "PowerShell(Stop-Process -Id 172156 -Force -ErrorAction SilentlyContinue)",
       "PowerShell(\"done\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(cp \"C:\\\\Users\\\\mayur\\\\Desktop\\\\Vercel_Portfolio\\\\vercel-app-main\\\\vercel-app-main\\\\components\\\\game\\\\DoodleJump.tsx\" \"C:\\\\Users\\\\mayur\\\\OneDrive\\\\Desktop\\\\Vercel_Portfolio\\\\Mayur's portfolio\\\\mayur-portfolio-updates\\\\components\\\\game\\\\DoodleJump.tsx\")",
+      "Bash(cp \"C:\\\\Users\\\\mayur\\\\Desktop\\\\Vercel_Portfolio\\\\vercel-app-main\\\\vercel-app-main\\\\components\\\\game\\\\GameWidget.tsx\" \"C:\\\\Users\\\\mayur\\\\OneDrive\\\\Desktop\\\\Vercel_Portfolio\\\\Mayur's portfolio\\\\mayur-portfolio-updates\\\\components\\\\game\\\\GameWidget.tsx\")",
+      "Bash(grep -n \"^/\\\\* ----------\" \"C:\\\\Users\\\\mayur\\\\OneDrive\\\\Desktop\\\\Vercel_Portfolio\\\\Mayur's portfolio\\\\mayur-portfolio-updates\\\\app\\\\globals.css\")",
+      "Bash(cp \"C:\\\\Users\\\\mayur\\\\Desktop\\\\VDC calculator\\\\versions\\\\circuit-line-v10.html\" \"C:\\\\Users\\\\mayur\\\\OneDrive\\\\Desktop\\\\Vercel_Portfolio\\\\Mayur's portfolio\\\\mayur-portfolio-updates\\\\public\\\\tools\\\\circuit-line.html\" && wc -l \"C:\\\\Users\\\\mayur\\\\OneDrive\\\\Desktop\\\\Vercel_Portfolio\\\\Mayur's portfolio\\\\mayur-portfolio-updates\\\\public\\\\tools\\\\circuit-line.html\")"
     ]
   }
 }
