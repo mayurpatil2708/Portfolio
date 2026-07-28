@@ -245,8 +245,8 @@ details.adv summary{cursor:pointer;font-size:11px;font-weight:600;color:var(--co
     <div class="panel-section">
       <h2><span class="htitle">Bulk Edit Luminaires</span></h2>
       <div class="field-row-inline">
-        <div class="field-row"><label>New Wattage (W)</label><input type="number" id="bulkWatts" min="0" placeholder="e.g. 150"></div>
-        <div class="field-row"><label>Circuit filter (blank = all)</label><input type="text" id="bulkCircuit" placeholder="optional"></div>
+        <div class="field-row"><label>Old Wattage (blank = all)</label><input type="number" id="bulkOldWatts" min="0" placeholder="e.g. 150"></div>
+        <div class="field-row"><label>New Wattage (W)</label><input type="number" id="bulkWatts" min="0" placeholder="e.g. 220"></div>
       </div>
       <button class="hdr-btn primary" id="btnBulkApply" style="width:100%;">Apply to Matching Poles</button>
       <div class="tool-hint" id="bulkResult"></div>
@@ -540,15 +540,20 @@ function flashModeBanner(message){
 
 document.getElementById('btnBulkApply').addEventListener('click', () => {
   const w = Number(document.getElementById('bulkWatts').value);
-  if (!(w >= 0)) { alert('Enter a wattage value.'); return; }
-  const filter = document.getElementById('bulkCircuit').value.trim();
+  if (!(w >= 0)) { alert('Enter a new wattage value.'); return; }
+  const oldWattsStr = document.getElementById('bulkOldWatts').value.trim();
+  const hasOldFilter = oldWattsStr !== '';
+  const oldW = Number(oldWattsStr);
+  if (hasOldFilter && !(oldW >= 0)) { alert('Enter a valid old wattage value, or leave it blank to match all poles.'); return; }
   let count = 0;
   state.nodes.forEach(n => {
     if (n.type !== 'pole') return;
-    if (filter && (n.circuit||'') !== filter) return;
+    if (hasOldFilter && n.watts !== oldW) return;
     n.watts = w; n.ampsOverride = null; count++;
   });
-  document.getElementById('bulkResult').textContent = count ? `Updated ${count} pole${count===1?'':'s'} to ${w}W.` : 'No matching poles found.';
+  document.getElementById('bulkResult').textContent = count
+    ? (hasOldFilter ? `Converted ${count} pole${count===1?'':'s'} from ${oldW}W to ${w}W.` : `Updated ${count} pole${count===1?'':'s'} to ${w}W.`)
+    : 'No matching poles found.';
   render();
 });
 
